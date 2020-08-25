@@ -21,7 +21,9 @@
     "inversify": "^5.0.1",
     "inversify-express-utils": "^6.3.2",
     "mongoose": "^5.10.0",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "swagger-express-typescript": "^1.0.2",
+    "swagger-ui-dist": "^3.32.4"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",
