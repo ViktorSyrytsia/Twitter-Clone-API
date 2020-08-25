@@ -23,7 +23,7 @@ import { HttpError } from "../../../shared/models/http.error";
 @ApiPath({
   path: "/api/v1/users",
   name: "Users",
-  security: { basicAuth: [] },
+  security: { apiKeyHeader: [] },
 })
 @controller("/users")
 export class UsersController extends ControllerBase {
@@ -42,7 +42,7 @@ export class UsersController extends ControllerBase {
       },
     },
     security: {
-      basicAuth: [],
+      apiKeyHeader: [],
     },
   })
   @httpGet("/")

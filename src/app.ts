@@ -34,18 +34,11 @@ export class App {
             title: "Twitter API",
             version: "1.0",
           },
-          externalDocs: {
-            url: "My url",
-          },
           securityDefinitions: {
-            basicAuth: {
-              type:
-                SwaggerDefinitionConstant.Security.Type.BASIC_AUTHENTICATION,
-            },
             apiKeyHeader: {
               type: SwaggerDefinitionConstant.Security.Type.API_KEY,
               in: SwaggerDefinitionConstant.Security.In.HEADER,
-              name: "apiHeader",
+              name: "x-auth-token",
             },
           },
         },
