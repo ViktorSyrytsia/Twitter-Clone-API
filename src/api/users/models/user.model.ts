@@ -1,32 +1,61 @@
-import { Base } from '@typegoose/typegoose/lib/defaultClasses';
-import { DocumentType, prop } from '@typegoose/typegoose';
-import { CreateQuery } from 'mongoose';
+import { Base } from "@typegoose/typegoose/lib/defaultClasses";
+import { DocumentType, prop } from "@typegoose/typegoose";
+import { CreateQuery } from "mongoose";
+import { ApiModel, ApiModelProperty } from "swagger-express-typescript";
 
+@ApiModel({
+  description: "Model of user",
+  name: "User",
+})
 export class User extends Base {
+  @ApiModelProperty({
+    description: "User firstname",
+    required: true,
+    example: ["ExampleName"],
+  })
+  @prop({ required: true })
+  public firstName: string;
 
-    @prop({ required: true })
-    public firstName: string;
+  @ApiModelProperty({
+    description: "User lastname",
+    required: true,
+    example: ["ExampleLastname"],
+  })
+  @prop({ required: true })
+  public lastName: string;
 
-    @prop({ required: true })
-    public lastName: string;
+  @ApiModelProperty({
+    description: "User nickname",
+    required: true,
+    example: ["ExampleUsername"],
+  })
+  @prop({ required: true })
+  public username: string;
 
-    @prop({ required: true })
-    public username: string;
+  @ApiModelProperty({
+    description: "User email",
+    required: true,
+    example: ["example@gmail.com"],
+  })
+  @prop({ required: true })
+  public email: string;
 
-    @prop({ required: true })
-    public email: string;
+  @ApiModelProperty({
+    description: "User role",
+    required: true,
+    example: ["Admin", "User", "etc"],
+  })
+  @prop({ required: true, default: "user" })
+  public role: string;
 
-    @prop({ required: true, default: 'user' })
-    public role: string;
+  public get fullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
 
-    public get fullName(): string {
-        return `${this.firstName} ${this.lastName}`;
-    }
-
-    constructor(user: CreateQuery<User>) {
-        super();
-        Object.assign(this, user);
-    }
+  constructor(user: CreateQuery<User>) {
+    super();
+    Object.assign(this, user);
+  }
 }
 
 export type DocumentUser = DocumentType<User>;
