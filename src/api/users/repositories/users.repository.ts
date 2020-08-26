@@ -1,13 +1,13 @@
-import { injectable } from "inversify";
-import { ReturnModelType } from "@typegoose/typegoose";
+import { injectable } from 'inversify';
+import { ReturnModelType } from '@typegoose/typegoose';
 
-import { DatabaseConnection } from "../../../database/database-connection";
-import { DocumentUser, User } from "../models/user.model";
-import { RepositoryBase } from "../../base/repository.base";
+import { DatabaseConnection } from '../../../database/database-connection';
+import { DocumentUser, User } from '../models/user.model';
+import { RepositoryBase } from '../../base/repository.base';
 
 @injectable()
 export class UsersRepository extends RepositoryBase<User> {
-    protected _repository: ReturnModelType<typeof User>;
+    public _repository: ReturnModelType<typeof User>;
 
     constructor(private _databaseConnection: DatabaseConnection) {
         super();
@@ -20,13 +20,13 @@ export class UsersRepository extends RepositoryBase<User> {
                 {
                     firstName: {
                         $regex: searchValue,
-                        $options: "i",
+                        $options: 'i',
                     },
                 },
                 {
                     lastName: {
                         $regex: searchValue,
-                        $options: "i",
+                        $options: 'i',
                     },
                 },
             ],

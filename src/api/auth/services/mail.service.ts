@@ -35,8 +35,8 @@ export class MailService {
             'Confirm email',
             token,
             EmailTemplatesEnum.ConfirmEmail
-        )
-    };
+        );
+    }
 
     private async _sendEmail(email: string, subject: string, token: string, template: EmailTemplatesEnum): Promise<void> {
         try {
@@ -52,8 +52,8 @@ export class MailService {
                 html
             });
         } catch (error) {
-            throw new HttpError(500, 'Template render error')
+            throw new HttpError(500, 'Template render error');
         }
-    };
+    }
 
 }

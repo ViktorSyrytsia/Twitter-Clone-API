@@ -2,12 +2,12 @@ import {
     DocumentType,
     getModelForClass,
     ReturnModelType,
-} from "@typegoose/typegoose";
-import { Base } from "@typegoose/typegoose/lib/defaultClasses";
-import { CreateQuery } from "mongoose";
-import { injectable } from "inversify";
+} from '@typegoose/typegoose';
+import { Base } from '@typegoose/typegoose/lib/defaultClasses';
+import { CreateQuery } from 'mongoose';
+import { injectable } from 'inversify';
 
-import { DatabaseConnection } from "../../database/database-connection";
+import { DatabaseConnection } from '../../database/database-connection';
 
 type Constructor<U> = new (doc?: CreateQuery<U>) => U;
 

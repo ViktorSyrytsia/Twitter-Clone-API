@@ -1,11 +1,11 @@
-import { injectable } from "inversify";
-import { ReturnModelType } from "@typegoose/typegoose";
-import { CreateQuery } from "mongoose";
+import { injectable } from 'inversify';
+import { ReturnModelType } from '@typegoose/typegoose';
+import { CreateQuery } from 'mongoose';
 
-import { DatabaseConnection } from "../../../database/database-connection";
-import { DocumentToken, Token } from "../models/token.model";
-import { RepositoryBase } from "../../base/repository.base";
-import { TokenType } from "../enum/token.enum";
+import { DatabaseConnection } from '../../../database/database-connection';
+import { DocumentToken, Token } from '../models/token.model';
+import { RepositoryBase } from '../../base/repository.base';
+import { TokenType } from '../enums/token.enum';
 
 @injectable()
 export class TokenRepository extends RepositoryBase<Token> {
@@ -31,7 +31,7 @@ export class TokenRepository extends RepositoryBase<Token> {
         return this._repository.create(token);
     }
 
-    public async deleteToken(token: Token): Promise<DocumentToken> {
-        return this._repository.findOneAndDelete(token);
+    public async deleteToken(tokenId: string): Promise<DocumentToken> {
+        return this._repository.findByIdAndDelete(tokenId);
     }
 }

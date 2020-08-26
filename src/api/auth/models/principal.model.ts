@@ -4,7 +4,6 @@ import { Types } from 'mongoose';
 import { User } from '../../users/models/user.model';
 
 export class Principal implements interfaces.Principal {
-
     public details: User;
 
     public constructor(user: User) {

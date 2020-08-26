@@ -1,9 +1,9 @@
-import { injectable } from "inversify";
-import { uuid } from "uuidv4";
+import { injectable } from 'inversify';
+import { uuid } from 'uuidv4';
 
-import { TokenRepository } from "../repositories/token.repository";
-import { DocumentToken, Token } from "../models/token.model";
-import { TokenType } from "../enum/token.enum";
+import { TokenRepository } from '../repositories/token.repository';
+import { DocumentToken, Token } from '../models/token.model';
+import { TokenType } from '../enums/token.enum';
 
 @injectable()
 export class TokenService {
@@ -29,7 +29,7 @@ export class TokenService {
         );
     }
 
-    public async deleteToken(token: Token): Promise<DocumentToken> {
-        return this._tokenRepository.deleteToken(token);
+    public async deleteToken(tokenId: string): Promise<DocumentToken> {
+        return this._tokenRepository.deleteToken(tokenId);
     }
 }
