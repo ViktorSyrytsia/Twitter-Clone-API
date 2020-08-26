@@ -24,7 +24,9 @@
     "reflect-metadata": "^0.1.13",
     "swagger-express-typescript": "^1.0.2",
     "swagger-ui-dist": "^3.32.4",
-    "uuidv4": "^6.2.3"
+    "uuidv4": "^6.2.3",
+    "nodemailer": "^6.4.11",
+    "email-templates": "^7.1.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",
@@ -33,6 +35,8 @@
     "@types/http-status-codes": "^1.2.0",
     "@types/inversify": "^2.0.33",
     "@types/mongoose": "^5.7.36",
+    "@types/nodemailer": "^6.4.0",
+    "@types/email-templates": "^7.1.0",
     "commonjs": "0.0.1",
     "nodemon": "^2.0.4",
     "ts-node": "^8.10.2",

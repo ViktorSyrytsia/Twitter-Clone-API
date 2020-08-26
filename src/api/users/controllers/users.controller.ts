@@ -45,23 +45,18 @@ export class UsersController extends ControllerBase {
       apiKeyHeader: [],
     },
   })
-  @httpGet("/")
-  public async findUsers(
-    @principal() user: Principal,
-    @queryParam("search") search: string,
-    @request() req: Request,
-    @response() res: Response
-  ): Promise<Response> {
-    try {
-      const users: DocumentUser[] = await this._userService.findUsersBySearchOrAll(
-        search
-      );
-      return this._success<{ users: DocumentUser[] }>(res, 200, { users });
-    } catch (error) {
-      return this._fail(
-        res,
-        new HttpError(INTERNAL_SERVER_ERROR, error.message)
-      );
+    @httpGet('/')
+    public async findUsers(
+        @principal() user: Principal,
+        @queryParam('search') search: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            const users: DocumentUser[] = await this._userService.findUsersBySearchOrAll(search);
+            return this._success<{ users: DocumentUser[] }>(res, 200, { users });
+        } catch (error) {
+            return this._fail(res, new HttpError(INTERNAL_SERVER_ERROR, error.message));
+        }
     }
-  }
 }
