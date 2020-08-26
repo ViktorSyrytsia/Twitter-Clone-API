@@ -1,0 +1,7 @@
+script:
+  - pipe: atlassian/firebase-deploy:0.6.0
+    variables:
+      KEY_FILE: 'tc-jsp-twitter-key.json'
+      PROJECT_ID: 'tc-jsp-twiiter'
+      MESSAGE: 'Deploying tc-jsp-twiiter'
+      DEBUG: 'true'

@@ -41,7 +41,7 @@ export class UsersController extends ControllerBase {
                     required: false,
                     allowEmptyValue: true,
                     name: 'search',
-                    description: 'Searching by firsname and lastname',
+                    description: 'Searching by firstName and lastName',
                 },
             },
         },
