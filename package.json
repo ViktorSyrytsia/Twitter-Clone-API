@@ -23,7 +23,8 @@
     "mongoose": "^5.10.0",
     "reflect-metadata": "^0.1.13",
     "swagger-express-typescript": "^1.0.2",
-    "swagger-ui-dist": "^3.32.4"
+    "swagger-ui-dist": "^3.32.4",
+    "uuidv4": "^6.2.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.7",
