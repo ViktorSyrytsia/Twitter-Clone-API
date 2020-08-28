@@ -9,10 +9,7 @@ import { HttpError } from '../../../shared/models/http.error';
 
 @injectable()
 export class AuthService {
-
-    constructor(
-        private _usersService: UsersService
-    ) {}
+    constructor(private _usersService: UsersService) {}
 
     public async getUserFromToken(token: string): Promise<User> {
         // logic
@@ -22,22 +19,30 @@ export class AuthService {
         return null;
     }
 
-    public async signUp(credentials: Credentials): Promise<UserWithTokenResponse> {
+    public async signUp(
+        credentials: Credentials
+    ): Promise<UserWithTokenResponse> {
         // logic
         // ...
         //
         // generation token logic
         // example of different error
-        let existingUser: DocumentUser = await this._usersService.findUserByEmail(credentials.email);
+        let existingUser: DocumentUser[] = await this._usersService.findUsersBySearchOrAll(
+            credentials.email
+        );
         if (!!existingUser) {
             throw new HttpError(CONFLICT, 'This email already exists');
         }
-        existingUser = await this._usersService.findUserByUsername(credentials.username);
+        existingUser = await this._usersService.findUsersBySearchOrAll(
+            credentials.username
+        );
         if (!!existingUser) {
             throw new HttpError(NOT_ACCEPTABLE, 'This username already exists');
         }
         // handle other errors
-        const user: DocumentUser = await this._usersService.createUser(new User(null)),
+        const user: DocumentUser = await this._usersService.createUser(
+                new User(null)
+            ),
             token: string = '12341';
         return { user, token };
     }

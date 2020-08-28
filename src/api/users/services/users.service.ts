@@ -1,4 +1,5 @@
 import { injectable } from 'inversify';
+import { UpdateQuery } from 'mongoose';
 
 import { UsersRepository } from '../repositories/users.repository';
 import { DocumentUser, User } from '../models/user.model';
@@ -11,21 +12,26 @@ export class UsersService {
         search: string
     ): Promise<DocumentUser[]> {
         return search
-            ? this._usersRepository.findByName(search)
-            : this._usersRepository._repository.find();
+            ? this._usersRepository.getBySearch(search)
+            : this._usersRepository.getAll();
     }
 
     public async createUser(user: User): Promise<DocumentUser> {
-        return this._usersRepository._repository.create(user);
+        return this._usersRepository.createUser(user);
     }
 
-    public async findUserByEmail(email: string): Promise<DocumentUser> {
-        return this._usersRepository._repository.findOne({ email: email });
+    public async findUserById(userId: string): Promise<DocumentUser> {
+        return this._usersRepository.getById(userId);
     }
 
-    public async findUserByUsername(username: string): Promise<DocumentUser> {
-        return this._usersRepository._repository.findOne({
-            username: username,
-        });
+    public async deleteUserById(userId: string): Promise<DocumentUser> {
+        return this._usersRepository.deleteUser(userId);
+    }
+
+    public async updateUserById(
+        userId: string,
+        data: UpdateQuery<User>
+    ): Promise<DocumentUser> {
+        return this._usersRepository.updateUser(userId, data);
     }
 }
