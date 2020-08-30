@@ -5,11 +5,11 @@ import {ApiModel, ApiModelProperty} from "swagger-express-typescript";
 import {User} from "../../users/models/user.model";
 
 // tweet stub
-class Tweet {
+export class Tweet {
 }
 
 // like stub
-class Like {
+export class Like {
 }
 
 @ApiModel({
