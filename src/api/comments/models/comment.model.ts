@@ -1,8 +1,8 @@
 import {Base} from '@typegoose/typegoose/lib/defaultClasses';
-import {DocumentType, prop, Ref} from "@typegoose/typegoose";
-import {CreateQuery} from "mongoose";
-import {ApiModel, ApiModelProperty} from "swagger-express-typescript";
-import {User} from "../../users/models/user.model";
+import {DocumentType, prop, Ref} from '@typegoose/typegoose';
+import {CreateQuery} from 'mongoose';
+import {ApiModel, ApiModelProperty} from 'swagger-express-typescript';
+import {User} from '../../users/models/user.model';
 
 // tweet stub
 export class Tweet {
@@ -31,7 +31,7 @@ export class Comment extends Base {
         example: ['5f423af74c9234267e6aa6ea']
     })
     @prop({required: true})
-    public tweetId: Ref<Tweet>
+    public tweetId: Ref<Tweet>;
 
     @ApiModelProperty({
         description: 'id of replied comment',
