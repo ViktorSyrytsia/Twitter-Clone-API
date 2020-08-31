@@ -1,10 +1,10 @@
 import {injectable} from 'inversify';
-import {ReturnModelType} from "@typegoose/typegoose";
+import {ReturnModelType} from '@typegoose/typegoose';
 
-import {DatabaseConnection} from "../../../database/database-connection";
-import {DocumentComment, Comment, Like} from "../models/comment.model";
-import {RepositoryBase} from "../../base/repository.base";
-import {CreateQuery} from "mongoose";
+import {DatabaseConnection} from '../../../database/database-connection';
+import {DocumentComment, Comment, Like} from '../models/comment.model';
+import {RepositoryBase} from '../../base/repository.base';
+import {CreateQuery} from 'mongoose';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {
@@ -27,7 +27,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         commentId: string,
         data: object
     ): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, data, {new: true})
+        return this._repository.findByIdAndUpdate(commentId, data, {new: true});
     }
 
     public async removeComment(commentId: string): Promise<DocumentComment> {
