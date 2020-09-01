@@ -19,6 +19,10 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.find({tweetId});
     }
 
+    public async getById(commentId: string): Promise<DocumentComment> {
+        return this._repository.findById(commentId);
+    }
+
     public async createComment(comment: CreateQuery<Comment>): Promise<DocumentComment> {
         return this._repository.create(comment);
     }
