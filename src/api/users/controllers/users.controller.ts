@@ -1,4 +1,4 @@
-import { Request, Response, text } from 'express';
+import { Request, Response } from 'express';
 import {
     controller,
     httpGet,
@@ -77,7 +77,6 @@ export class UsersController extends ControllerBase {
     @httpGet('/')
     public async searchUsers(
         @queryParam('search') search: string,
-        @principal() user: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -124,13 +123,13 @@ export class UsersController extends ControllerBase {
     })
     @httpGet('/current', AuthMiddleware)
     public async getCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const user: DocumentUser = await this._userService.findUserById(
-                currentUser.details._id.toHexString()
+                principal.details._id.toHexString()
             );
             return this._success<{ user: DocumentUser }>(res, 200, {
                 user,
@@ -171,7 +170,6 @@ export class UsersController extends ControllerBase {
     })
     @httpGet('/:id', AuthMiddleware)
     public async getUserById(
-        @principal() user: Principal,
         @requestParam() id: string,
         @request() req: Request,
         @response() res: Response
@@ -220,13 +218,13 @@ export class UsersController extends ControllerBase {
     })
     @httpPut('/', AuthMiddleware)
     public async updateCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const updatedUser: DocumentUser = await this._userService.updateUserById(
-                currentUser.details._id.toHexString(),
+                principal.details._id.toHexString(),
                 req.body
             );
             return this._success<{ updatedUser: DocumentUser }>(res, 200, {
@@ -267,13 +265,13 @@ export class UsersController extends ControllerBase {
     })
     @httpDelete('/', AuthMiddleware)
     public async deleteCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const user: DocumentUser = await this._userService.deleteUserById(
-                currentUser.details._id.toHexString()
+                principal.details._id.toHexString()
             );
             return this._success<{ user: DocumentUser }>(res, 200, {
                 user,
