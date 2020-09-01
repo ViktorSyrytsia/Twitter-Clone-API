@@ -23,6 +23,14 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._repository.find();
     }
 
+    public async getByUsername(userUsername: string): Promise<DocumentUser> {
+        return this._repository.findOne({ username: userUsername });
+    }
+
+    public async getByEmail(userEmail: string): Promise<DocumentUser> {
+        return this._repository.findOne({ email: userEmail });
+    }
+
     public async getBySearch(search: string): Promise<DocumentUser[]> {
         return this._repository.find({
             $or: [
