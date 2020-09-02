@@ -1,4 +1,4 @@
-import { ContainerModule, interfaces } from 'inversify';
+import {ContainerModule, interfaces} from 'inversify';
 
 import {CommentRepository} from './repositories/comment.repository';
 import {CommentService} from './services/comment.service';

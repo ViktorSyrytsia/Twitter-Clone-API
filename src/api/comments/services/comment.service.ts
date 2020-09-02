@@ -1,9 +1,8 @@
 import {injectable} from 'inversify';
-import {UpdateQuery} from 'mongoose';
 
 import {CommentRepository} from '../repositories/comment.repository';
-import {DocumentComment, Comment, Like} from '../models/comment.model';
-import {PreviewEmailOpts} from 'email-templates';
+import {Comment, DocumentComment} from '../models/comment.model';
+import {Like} from '../models/like.model';
 
 @injectable()
 export class CommentService {

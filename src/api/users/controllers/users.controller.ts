@@ -8,6 +8,7 @@ import {
     response,
     httpDelete,
     httpPut,
+    requestParam,
 } from 'inversify-express-utils';
 import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
 import {
@@ -96,24 +97,24 @@ export class UsersController extends ControllerBase {
     }
 
     @ApiOperationGet({
-        path: 'current/',
+        path: '/current',
         description: 'Get current logged user',
         summary: 'Get current user',
         parameters: {},
         responses: {
             200: {
                 description: 'Success /  returns dto with current user',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
                 description: 'Fail / unauthorized',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             404: {
                 description: 'Fail / user not found',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
         },
@@ -142,6 +143,52 @@ export class UsersController extends ControllerBase {
         }
     }
 
+    @ApiOperationGet({
+        path: '/:id',
+        description: 'Get one user by id',
+        summary: 'Get one user',
+        parameters: {},
+        responses: {
+            200: {
+                description: 'Success /  returns user dto',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'User',
+            },
+            401: {
+                description: 'Fail / unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'User',
+            },
+            404: {
+                description: 'Fail / user not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'User',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpGet('/:id', AuthMiddleware)
+    public async getUserById(
+        @principal() user: Principal,
+        @requestParam() id: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            const user: DocumentUser = await this._userService.findUserById(id);
+            return this._success<{ user: DocumentUser }>(res, 200, {
+                user,
+            });
+        } catch (error) {
+            return this._fail(
+                res,
+                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
     @ApiOperationPut({
         description: 'Update current logged user',
         summary: 'Update current user',
@@ -153,17 +200,17 @@ export class UsersController extends ControllerBase {
         responses: {
             200: {
                 description: 'Success / return updated user',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
                 description: 'Fail / unauthorized',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             404: {
                 description: 'Fail / user not found',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
         },
@@ -200,17 +247,17 @@ export class UsersController extends ControllerBase {
         responses: {
             200: {
                 description: 'Success / return null',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
                 description: 'Fail / unauthorized',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             404: {
                 description: 'Fail / user not found',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
         },
@@ -225,11 +272,11 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            await this._userService.deleteUserById(
+            const user: DocumentUser = await this._userService.deleteUserById(
                 currentUser.details._id.toHexString()
             );
-            return this._success<{ user: null }>(res, 200, {
-                user: null,
+            return this._success<{ user: DocumentUser }>(res, 200, {
+                user,
             });
         } catch (error) {
             return this._fail(

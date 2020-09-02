@@ -1,10 +1,11 @@
 import {injectable} from 'inversify';
 import {ReturnModelType} from '@typegoose/typegoose';
+import {CreateQuery} from 'mongoose';
 
 import {DatabaseConnection} from '../../../database/database-connection';
-import {DocumentComment, Comment, Like} from '../models/comment.model';
+import {Comment, DocumentComment} from '../models/comment.model';
+import {Like} from '../models/like.model';
 import {RepositoryBase} from '../../base/repository.base';
-import {CreateQuery} from 'mongoose';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {

@@ -1,21 +1,25 @@
 import {Request, Response, text} from 'express';
 import {
     controller,
-    httpGet,
-    principal,
-    queryParam,
-    request,
-    response,
     httpDelete,
-    httpPut, interfaces, requestParam, httpPost, requestBody,
-
+    httpGet,
+    httpPatch,
+    httpPost,
+    httpPut,
+    request,
+    requestBody,
+    requestParam,
+    response,
 } from 'inversify-express-utils';
 import {INTERNAL_SERVER_ERROR, NOT_FOUND, OK} from 'http-status-codes';
 import {
-    ApiPath,
+    ApiOperationDelete,
     ApiOperationGet,
+    ApiOperationPatch,
+    ApiOperationPost,
+    ApiOperationPut,
+    ApiPath,
     SwaggerDefinitionConstant,
-    ApiOperationPut, ApiOperationPost, ApiOperationDelete,
 } from 'swagger-express-typescript';
 
 import {ControllerBase} from '../../base/controller.base';
@@ -24,7 +28,7 @@ import {Comment, DocumentComment} from '../models/comment.model';
 import {HttpError} from '../../../shared/models/http.error';
 
 @ApiPath({
-    path: '/api/v1/comments/',
+    path: '/api/v1/comments',
     name: 'Comments',
     security: {apiKeyHeader: []},
 })
@@ -37,6 +41,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comment by id',
         summary: 'Get comment',
+        path: '/:id',
         parameters: {},
         responses: {
             200: {
@@ -56,7 +61,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpGet('/{id}')
+    @httpGet('/:id')
     public async getCommentById(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -82,10 +87,20 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comment by tweet',
         summary: 'Get comment by tweet id',
-        parameters: {},
+        parameters: {
+            query: {
+                tweetId: {
+                    type: 'text',
+                    name: 'tweetId',
+                    required: true,
+                    allowEmptyValue: false,
+                    description: 'id of tweet'
+                }
+            }
+        },
         responses: {
             200: {
-                description: 'Success /  returns array of comment',
+                description: 'Success / returns array of comments',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Comment',
             },
@@ -171,7 +186,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPut('/')
+    @httpPut('/:id')
     public async updateComment(
         @requestParam('id') id: string,
         @requestBody() comment: Comment,
@@ -195,13 +210,14 @@ export class CommentController extends ControllerBase {
         }
     }
 
-    @ApiOperationPut({
+    @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
+        path: '/:id',
         parameters: {},
         responses: {
             200: {
-                description: 'Success /  returns liked comment comment',
+                description: 'Success / returns liked comment comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
@@ -217,7 +233,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPut('/')
+    @httpPatch('/:id')
     public async likeComment(
         @requestParam('id') id: string,
         @requestBody() comment: Comment,
@@ -241,13 +257,14 @@ export class CommentController extends ControllerBase {
         }
     }
 
-    @ApiOperationPut({
+    @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
+        path: '/:id',
         parameters: {},
         responses: {
             200: {
-                description: 'Success /  returns unliked comment comment',
+                description: 'Success / returns unliked comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
@@ -263,15 +280,15 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPut('/')
+    @httpPatch('/:id')
     public async unlikeComment(
-        @requestParam('commentId') commentId: string,
+        @requestParam('id') id: string,
         @requestParam('likeId') likeId: string,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
-            const unlikedComment: DocumentComment = await this._commentService.unlikeComment(commentId, likeId);
+            const unlikedComment: DocumentComment = await this._commentService.unlikeComment(id, likeId);
             if (!unlikedComment) {
                 return this._fail(
                     res, new HttpError(NOT_FOUND, 'comment with such id not exists')
@@ -290,6 +307,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationDelete({
         description: 'remove comment',
         summary: 'remove comment by id',
+        path: '/:id',
         parameters: {},
         responses: {
             200: {
@@ -309,7 +327,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpDelete('/')
+    @httpDelete('/:id')
     public async removeComment(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -332,6 +350,5 @@ export class CommentController extends ControllerBase {
             );
         }
     }
-
 }
 

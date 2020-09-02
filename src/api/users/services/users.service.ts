@@ -16,6 +16,14 @@ export class UsersService {
             : this._usersRepository.getAll();
     }
 
+    public async findUserByUsername(username: string): Promise<DocumentUser> {
+        return this._usersRepository.getByUsername(username);
+    }
+
+    public async findUserByEmail(email: string): Promise<DocumentUser> {
+        return this._usersRepository.getByEmail(email);
+    }
+
     public async createUser(user: User): Promise<DocumentUser> {
         return this._usersRepository.createUser(user);
     }
