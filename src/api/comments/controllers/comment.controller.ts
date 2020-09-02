@@ -11,7 +11,7 @@ import {
     requestParam,
     response,
 } from 'inversify-express-utils';
-import {INTERNAL_SERVER_ERROR, NOT_FOUND, OK} from 'http-status-codes';
+import {INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
 import {
     ApiOperationDelete,
     ApiOperationGet,
@@ -49,11 +49,6 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
-            404: {
-                description: 'Fail / no comment found',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
             500: {
                 description: 'Fail / cannot found comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -69,11 +64,6 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const comment: DocumentComment = await this._commentService.findById(id);
-            if (!comment) {
-                return this._fail(
-                    res, new HttpError(NOT_FOUND, 'comment with such id not exists')
-                );
-            }
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment
             });
@@ -174,11 +164,6 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
-            404: {
-                description: 'Fail / cannot find comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
             500: {
                 description: 'Fail / cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -195,11 +180,6 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const updatedComment: DocumentComment = await this._commentService.updateById(id, comment);
-            if (!updatedComment) {
-                return this._fail(
-                    res, new HttpError(NOT_FOUND, 'comment with such id not exists')
-                );
-            }
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: updatedComment
             });
@@ -213,16 +193,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/:id',
+        path: '/:id/like',
         parameters: {},
         responses: {
             200: {
-                description: 'Success / returns liked comment comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            404: {
-                description: 'Fail / cannot find comment',
+                description: 'Success / returns liked comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
@@ -233,7 +208,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPatch('/:id')
+    @httpPatch('/:id/like')
     public async likeComment(
         @requestParam('id') id: string,
         @requestBody() comment: Comment,
@@ -242,11 +217,6 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const likedComment: DocumentComment = await this._commentService.likeComment(id);
-            if (!likedComment) {
-                return this._fail(
-                    res, new HttpError(NOT_FOUND, 'comment with such id not exists')
-                );
-            }
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: likedComment
             });
@@ -260,16 +230,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/:id',
+        path: '/:id/unlike',
         parameters: {},
         responses: {
             200: {
                 description: 'Success / returns unliked comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            404: {
-                description: 'Fail / cannot find comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
@@ -280,7 +245,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPatch('/:id')
+    @httpPatch('/:id/unlike')
     public async unlikeComment(
         @requestParam('id') id: string,
         @requestParam('likeId') likeId: string,
@@ -289,11 +254,6 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const unlikedComment: DocumentComment = await this._commentService.unlikeComment(id, likeId);
-            if (!unlikedComment) {
-                return this._fail(
-                    res, new HttpError(NOT_FOUND, 'comment with such id not exists')
-                );
-            }
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
             });
@@ -311,12 +271,7 @@ export class CommentController extends ControllerBase {
         parameters: {},
         responses: {
             200: {
-                description: 'Success /  returns removed comment ',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            404: {
-                description: 'Fail / cannot find comment',
+                description: 'Success / returns removed comment ',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
@@ -335,12 +290,6 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const unlikedComment: DocumentComment = await this._commentService.removeComment(id);
-            if (!unlikedComment) {
-                return this._fail(
-                    res, new HttpError(NOT_FOUND, 'comme ' +
-                        '   nt with such id not exists')
-                );
-            }
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
             });
