@@ -1,35 +1,35 @@
-import { Request, Response, text } from 'express';
+import {Request, Response} from 'express';
 import {
     controller,
+    httpDelete,
     httpGet,
+    httpPut,
     principal,
     queryParam,
     request,
-    response,
-    httpDelete,
-    httpPut,
     requestParam,
+    response,
 } from 'inversify-express-utils';
-import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
+import {INTERNAL_SERVER_ERROR} from 'http-status-codes';
 import {
-    ApiPath,
-    ApiOperationGet,
-    SwaggerDefinitionConstant,
     ApiOperationDelete,
+    ApiOperationGet,
     ApiOperationPut,
+    ApiPath,
+    SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
 
-import { ControllerBase } from '../../base/controller.base';
-import { Principal } from '../../auth/models/principal.model';
-import { UsersService } from '../services/users.service';
-import { DocumentUser } from '../models/user.model';
-import { HttpError } from '../../../shared/models/http.error';
-import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
+import {ControllerBase} from '../../base/controller.base';
+import {Principal} from '../../auth/models/principal.model';
+import {UsersService} from '../services/users.service';
+import {DocumentUser} from '../models/user.model';
+import {HttpError} from '../../../shared/models/http.error';
+import {AuthMiddleware} from '../../auth/middlewares/auth.middleware';
 
 @ApiPath({
     path: '/api/v1/users/',
     name: 'Users',
-    security: { apiKeyHeader: [] },
+    security: {apiKeyHeader: []},
 })
 @controller('/users')
 export class UsersController extends ControllerBase {
@@ -124,13 +124,13 @@ export class UsersController extends ControllerBase {
     })
     @httpGet('/current', AuthMiddleware)
     public async getCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const user: DocumentUser = await this._userService.findUserById(
-                currentUser.details._id.toHexString()
+                principal.details._id.toHexString()
             );
             return this._success<{ user: DocumentUser }>(res, 200, {
                 user,
@@ -171,7 +171,6 @@ export class UsersController extends ControllerBase {
     })
     @httpGet('/:id', AuthMiddleware)
     public async getUserById(
-        @principal() user: Principal,
         @requestParam() id: string,
         @request() req: Request,
         @response() res: Response
@@ -220,13 +219,13 @@ export class UsersController extends ControllerBase {
     })
     @httpPut('/', AuthMiddleware)
     public async updateCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const updatedUser: DocumentUser = await this._userService.updateUserById(
-                currentUser.details._id.toHexString(),
+                principal.details._id.toHexString(),
                 req.body
             );
             return this._success<{ updatedUser: DocumentUser }>(res, 200, {
@@ -267,13 +266,13 @@ export class UsersController extends ControllerBase {
     })
     @httpDelete('/', AuthMiddleware)
     public async deleteCurrentUser(
-        @principal() currentUser: Principal,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
             const user: DocumentUser = await this._userService.deleteUserById(
-                currentUser.details._id.toHexString()
+                principal.details._id.toHexString()
             );
             return this._success<{ user: DocumentUser }>(res, 200, {
                 user,

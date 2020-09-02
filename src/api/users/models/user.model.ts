@@ -1,5 +1,5 @@
 import { Base } from '@typegoose/typegoose/lib/defaultClasses';
-import { DocumentType, prop } from '@typegoose/typegoose';
+import { DocumentType, prop, Ref } from '@typegoose/typegoose';
 import { CreateQuery } from 'mongoose';
 import { ApiModel, ApiModelProperty } from 'swagger-express-typescript';
 
@@ -80,10 +80,10 @@ export class User extends Base {
     @ApiModelProperty({
         description: 'List of followers usersId',
         required: false,
-        example: ['5f423af74c9234267e6aa6ea', '5f423af74c9234267e6acccc'],
+        example: [['5f423af74c9234267e6aa6ea', '5f423af74c9234267e6acccc']],
     })
     @prop({ required: false, default: [] })
-    public followers: User[];
+    public followers: Ref<User>[];
 
     @ApiModelProperty({
         description: 'UserCreated time stamp',
