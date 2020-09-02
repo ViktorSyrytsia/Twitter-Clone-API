@@ -1,8 +1,9 @@
 import {Base} from '@typegoose/typegoose/lib/defaultClasses';
 import {DocumentType, prop, Ref} from '@typegoose/typegoose';
-import {CreateQuery} from 'mongoose';
+import {CreateQuery, Types} from 'mongoose';
 import {ApiModel, ApiModelProperty} from 'swagger-express-typescript';
 import {User} from '../../users/models/user.model';
+<<<<<<< HEAD
 
 // tweet stub
 export class Tweet {
@@ -12,6 +13,10 @@ export class Tweet {
 export class Like {
 }
 
+=======
+import {Tweet} from './tweet.model';
+
+>>>>>>> 789158a... fixed issues with comment model and repository
 @ApiModel({
     description: 'Model of Comment',
     name: 'Comment',
@@ -52,10 +57,14 @@ export class Comment extends Base {
     @ApiModelProperty({
         description: 'likes array of comment',
         required: true,
+<<<<<<< HEAD
         example:['5f423af74c9234267e6aa6ea','3r423af74c95f4267e6ak612']
+=======
+        example: [['5f423af74c9234267e6aa6ea', '3r423af74c95f4267e6ak612']]
+>>>>>>> 789158a... fixed issues with comment model and repository
     })
-    @prop({required: true})
-    public likes: Array<Like>;
+    @prop({ref: () => User, required: true})
+    public likes: Types.ObjectId[];
 
     @ApiModelProperty({
         description: 'comment creation time stamp',

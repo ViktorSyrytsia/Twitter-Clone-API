@@ -37,49 +37,6 @@ export class CommentController extends ControllerBase {
         super();
     }
 
-    @ApiOperationGet({
-        description: 'Get comment by id',
-        summary: 'Get comment',
-        path: '/{id}',
-        parameters: {
-            path:{
-                id:{
-                    type: 'string',
-                    allowEmptyValue: false,
-                    description: 'id of comment to be found',
-                }
-            }
-        },
-        responses: {
-            200: {
-                description: 'Success /  returns dto with comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot found comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-        }
-    })
-    @httpGet('/{id}')
-    public async getCommentById(
-        @requestParam('id') id: string,
-        @request() req: Request,
-        @response() res: Response
-    ) {
-        try {
-            const comment: DocumentComment = await this._commentService.findById(id);
-            return this._success<{ comment: DocumentComment }>(res, OK, {
-                comment
-            });
-        } catch (error) {
-            return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
-            );
-        }
-    }
 
     @ApiOperationGet({
         description: 'Get comment by tweet',
