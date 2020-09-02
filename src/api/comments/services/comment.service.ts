@@ -15,7 +15,7 @@ export class CommentService {
         return this._commentRepository.getById(id);
     }
 
-    public async getByTweet(tweetId: string): Promise<Array<DocumentComment>> {
+    public async findByTweet(tweetId: string): Promise<Array<DocumentComment>> {
         return this._commentRepository.getByTweet(tweetId);
     }
 
@@ -37,7 +37,7 @@ export class CommentService {
         return this._commentRepository.unlikeComment(commentId, likeId);
     }
 
-    public async removeComment(id: string): Promise<DocumentComment> {
+    public async deleteComment(id: string): Promise<DocumentComment> {
         return this._commentRepository.removeComment(id);
     }
 }

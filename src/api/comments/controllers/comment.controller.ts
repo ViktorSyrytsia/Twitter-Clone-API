@@ -32,7 +32,7 @@ import {HttpError} from '../../../shared/models/http.error';
     name: 'Comments',
     security: {apiKeyHeader: []},
 })
-@controller('/users')
+@controller('/comments')
 export class CommentController extends ControllerBase {
     constructor(private _commentService: CommentService) {
         super();
@@ -41,8 +41,16 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comment by id',
         summary: 'Get comment',
-        path: '/:id',
-        parameters: {},
+        path: '/{id}',
+        parameters: {
+            path:{
+                id:{
+                    type: 'string',
+                    allowEmptyValue: false,
+                    description: 'id of comment to be found',
+                }
+            }
+        },
         responses: {
             200: {
                 description: 'Success /  returns dto with comment',
@@ -56,7 +64,7 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpGet('/:id')
+    @httpGet('/{id}')
     public async getCommentById(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -108,7 +116,7 @@ export class CommentController extends ControllerBase {
         @response() res: Response
     ) {
         try {
-            const comments: Array<DocumentComment> = await this._commentService.getByTweet(tweetId);
+            const comments: Array<DocumentComment> = await this._commentService.findByTweet(tweetId);
             return this._success<{ comments: Array<DocumentComment> }>(res, OK, {
                 comments
             });
@@ -289,7 +297,7 @@ export class CommentController extends ControllerBase {
         @response() res: Response
     ) {
         try {
-            const unlikedComment: DocumentComment = await this._commentService.removeComment(id);
+            const unlikedComment: DocumentComment = await this._commentService.deleteComment(id);
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
             });
