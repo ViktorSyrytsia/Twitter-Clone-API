@@ -1,45 +1,56 @@
 import { injectable } from 'inversify';
-import { UpdateQuery } from 'mongoose';
+import { Types, UpdateQuery } from 'mongoose';
 
 import { UsersRepository } from '../repositories/users.repository';
 import { DocumentUser, User } from '../models/user.model';
 
 @injectable()
 export class UsersService {
-    constructor(private _usersRepository: UsersRepository) {}
+    constructor(private _usersRepository: UsersRepository) {
+    }
 
     public async findUsersBySearchOrAll(
-        search: string
+        search: string,
+        skip: number,
+        limit: number
     ): Promise<DocumentUser[]> {
         return search
-            ? this._usersRepository.getBySearch(search)
-            : this._usersRepository.getAll();
+            ? this._usersRepository.findBySearch(search, skip, limit)
+            : this._usersRepository.findAll(skip, limit);
     }
 
     public async findUserByUsername(username: string): Promise<DocumentUser> {
-        return this._usersRepository.getByUsername(username);
+        return this._usersRepository.findByUsername(username);
     }
 
     public async findUserByEmail(email: string): Promise<DocumentUser> {
-        return this._usersRepository.getByEmail(email);
+        return this._usersRepository.findByEmail(email);
     }
 
     public async createUser(user: User): Promise<DocumentUser> {
         return this._usersRepository.createUser(user);
     }
 
-    public async findUserById(userId: string): Promise<DocumentUser> {
-        return this._usersRepository.getById(userId);
+    public async findById(userId: Types.ObjectId): Promise<DocumentUser> {
+        return this._usersRepository.findById(userId);
     }
 
-    public async deleteUserById(userId: string): Promise<DocumentUser> {
+    public async deleteUserById(userId: Types.ObjectId): Promise<DocumentUser> {
         return this._usersRepository.deleteUser(userId);
     }
 
     public async updateUserById(
-        userId: string,
+        userId: Types.ObjectId,
         data: UpdateQuery<User>
     ): Promise<DocumentUser> {
         return this._usersRepository.updateUser(userId, data);
+    }
+
+    public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
+        return this._usersRepository.followUser(userId, userIdToFollow);
+    }
+
+    public async unfollowUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
+        return this._usersRepository.unfollowUser(userId, userIdToFollow);
     }
 }
