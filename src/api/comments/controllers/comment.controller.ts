@@ -68,7 +68,11 @@ export class CommentController extends ControllerBase {
             }
         },
         responses: {
-            200: {description: 'Success / returns array of comments',},
+            200: {
+                description: 'Success / returns array of comments',
+                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                model: 'Comment'
+            },
             404: {description: 'Fail / tweet not found'},
             500: {description: 'Fail / cannot find comments'},
         }
@@ -90,7 +94,7 @@ export class CommentController extends ControllerBase {
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
@@ -123,7 +127,11 @@ export class CommentController extends ControllerBase {
             }
         },
         responses: {
-            201: {description: 'Success / returns created comment',},
+            201: {
+                description: 'Success / returns created comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Comment'
+            },
             404: {description: 'Fail / tweet not found'},
             422: {description: 'Fail / text not a string'},
             500: {description: 'Fail / cannot create comment',},
@@ -150,7 +158,7 @@ export class CommentController extends ControllerBase {
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
@@ -201,7 +209,7 @@ export class CommentController extends ControllerBase {
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
@@ -229,7 +237,7 @@ export class CommentController extends ControllerBase {
         }
     })
     @httpDelete('/{commentId}')
-    public async removeComment(
+    public async deleteComment(
         @principal() principal: Principal,
         @requestParam('commentId') commentId: string,
         @request() req: Request,
@@ -237,14 +245,14 @@ export class CommentController extends ControllerBase {
     ) {
         try {
             const deletedComment: DocumentComment =
-                await this._commentService.deleteComment(principal,Types.ObjectId(commentId));
+                await this._commentService.deleteComment(principal, Types.ObjectId(commentId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: deletedComment
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
@@ -260,11 +268,7 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
-            500: {
-                description: 'Fail / cannot like comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
+            500: {description: 'Fail / cannot like comment',},
         }
     })
     @httpPatch('/like/{id}')
@@ -283,7 +287,7 @@ export class CommentController extends ControllerBase {
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
@@ -325,11 +329,9 @@ export class CommentController extends ControllerBase {
             });
         } catch (error) {
             return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
             );
         }
     }
-
-
 }
 
