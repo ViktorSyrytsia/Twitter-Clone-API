@@ -1,15 +1,10 @@
 import {injectable} from 'inversify';
-import {UpdateQuery} from 'mongoose';
-
 import {CommentRepository} from '../repositories/comment.repository';
-<<<<<<< HEAD
-import {DocumentComment, Comment, Like} from '../models/comment.model';
-import {PreviewEmailOpts} from 'email-templates';
-=======
 import {Comment, DocumentComment} from '../models/comment.model';
 import {Types} from 'mongoose';
 import {Principal} from '../../auth/models/principal.model';
->>>>>>> 04a8e66... code refactoring
+import {CommentNotFoundError} from '../models/errors/CommentNotFound.error';
+import {NotOwnerOfCommentError} from '../models/errors/NotOwnerOfComment.error';
 
 @injectable()
 export class CommentService {
@@ -19,7 +14,7 @@ export class CommentService {
     public async findCommentByTweet(tweetId: Types.ObjectId,
                                     page: number,
                                     limit: number
-    ): Promise<Array<DocumentComment>> {
+    ): Promise<DocumentComment[]> {
         return this._commentRepository.findByTweet(tweetId, page, limit);
     }
 
@@ -47,11 +42,11 @@ export class CommentService {
         const comment = await this._commentRepository.findById(commentId);
 
         if (!comment){
-            throw new Error('comment not found');
+            throw new CommentNotFoundError(404,'comment not found');
         }
 
         if (comment.authorId !== principal.details._id) {
-            throw new Error('not owner of comment');
+            throw new NotOwnerOfCommentError(403,'not owner of comment');
         }
 
         comment.text = text;
@@ -64,10 +59,10 @@ export class CommentService {
         const comment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
-            throw new Error('comment not found');
+            throw new CommentNotFoundError(404,'comment not found');
         }
         if (comment.authorId !== principal.details._id) {
-            throw new Error('not owner of comment');
+            throw new NotOwnerOfCommentError(403,'not owner of comment');
         }
         return this._commentRepository.removeComment(commentId);
     }
