@@ -62,7 +62,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}});
     }
 
-    public async findNumberOfReplies(commentId:Types.ObjectId):Promise<number>{
+    public async findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
         const comments = await this._repository.find({replyToComment: commentId});
         return comments.length;
     }
