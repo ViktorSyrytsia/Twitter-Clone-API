@@ -27,18 +27,18 @@ export class AuthService {
         //
         // generation token logic
         // example of different error
-        let existingUser: DocumentUser[] = await this._usersService.findUsersBySearchOrAll(
-            credentials.email
-        );
-        if (!!existingUser) {
-            throw new HttpError(CONFLICT, 'This email already exists');
-        }
-        existingUser = await this._usersService.findUsersBySearchOrAll(
-            credentials.username
-        );
-        if (!!existingUser) {
-            throw new HttpError(NOT_ACCEPTABLE, 'This username already exists');
-        }
+        // let existingUser: DocumentUser[] = await this._usersService.findUsersBySearchOrAll(
+        //     credentials.email
+        // );
+        // if (!!existingUser) {
+        //     throw new HttpError(CONFLICT, 'This email already exists');
+        // }
+        // existingUser = await this._usersService.findUsersBySearchOrAll(
+        //     credentials.username
+        // );
+        // if (!!existingUser) {
+        //     throw new HttpError(NOT_ACCEPTABLE, 'This username already exists');
+        // }
         // handle other errors
         const user: DocumentUser = await this._usersService.createUser(
                 new User(null)
