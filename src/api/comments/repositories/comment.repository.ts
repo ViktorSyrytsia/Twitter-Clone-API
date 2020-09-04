@@ -53,13 +53,13 @@ export class CommentRepository extends RepositoryBase<Comment> {
     public async likeComment(commentId: Types.ObjectId,
                              userId: Types.ObjectId
     ): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, {$push: {likes: userId}});
+        return this._repository.findByIdAndUpdate(commentId, {$push: {likes: userId}}, {new: true});
     }
 
     public async unlikeComment(commentId: Types.ObjectId,
                                userId: Types.ObjectId
     ): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}});
+        return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}}, {new: true});
     }
 
     public async findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
