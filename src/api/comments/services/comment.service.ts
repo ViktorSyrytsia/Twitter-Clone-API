@@ -15,7 +15,20 @@ export class CommentService {
                                     page: number,
                                     limit: number
     ): Promise<DocumentComment[]> {
-        return this._commentRepository.findByTweet(tweetId, page, limit);
+        let comments: DocumentComment[] = await this._commentRepository.findByTweet(tweetId, page, limit);
+
+        comments.map(comment => ({
+            authorId: comment.authorId,
+            tweetId: comment.tweetId,
+            replyToComment: (async () => {
+                await this._commentRepository.findNumberOfReplies(comment._id);
+            })(),
+            text: comment.text,
+            likes: comment.likes.length,
+            createdAt: comment.createdAt,
+            lastEdited: comment.lastEdited,
+        }));
+        return comments;
     }
 
     public async createComment(text: string,
@@ -41,12 +54,12 @@ export class CommentService {
     ): Promise<DocumentComment> {
         const comment = await this._commentRepository.findById(commentId);
 
-        if (!comment){
-            throw new CommentNotFoundError(404,'comment not found');
+        if (!comment) {
+            throw new CommentNotFoundError(404, 'comment not found');
         }
 
         if (comment.authorId !== principal.details._id) {
-            throw new NotOwnerOfCommentError(403,'not owner of comment');
+            throw new NotOwnerOfCommentError(403, 'not owner of comment');
         }
 
         comment.text = text;
@@ -59,10 +72,10 @@ export class CommentService {
         const comment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
-            throw new CommentNotFoundError(404,'comment not found');
+            throw new CommentNotFoundError(404, 'comment not found');
         }
         if (comment.authorId !== principal.details._id) {
-            throw new NotOwnerOfCommentError(403,'not owner of comment');
+            throw new NotOwnerOfCommentError(403, 'not owner of comment');
         }
         return this._commentRepository.removeComment(commentId);
     }
