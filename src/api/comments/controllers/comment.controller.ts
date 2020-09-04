@@ -44,6 +44,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comments by tweet',
         summary: 'Get comment by tweet id with pagination',
+        path: '/{tweetId}',
         parameters: {
             path: {
                 tweetId: {
@@ -102,6 +103,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPost({
         description: 'Create comment',
         summary: 'Create comment with given string',
+        path: '/{tweetId}',
         parameters: {
             path: {
                 tweetId: {
@@ -166,6 +168,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPut({
         description: 'Update comment',
         summary: 'Update comment with new text',
+        path: '/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -185,7 +188,11 @@ export class CommentController extends ControllerBase {
             }
         },
         responses: {
-            200: {description: 'Success / returns updated comment comment',},
+            200: {
+                description: 'Success / returns updated comment comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Comment'
+            },
             403: {description: 'Fail / not comment author'},
             404: {description: 'Fail / comment not found'},
             422: {description: 'Fail / text not a string'},
@@ -217,7 +224,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationDelete({
         description: 'delete comment',
         summary: 'delete comment by id',
-        path: '/{id}',
+        path: '/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -230,7 +237,11 @@ export class CommentController extends ControllerBase {
             },
         },
         responses: {
-            200: {description: 'Success / returns removed comment '},
+            200: {
+                description: 'Success / returns removed comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Comment'
+            },
             403: {description: 'Fail / not owner of comment'},
             404: {description: 'Fail / comment not found'},
             500: {description: 'Fail / cannot remove comment',},
@@ -261,8 +272,18 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/like/{id}',
-        parameters: {},
+        path: '/like/{commentId}',
+        parameters: {
+            path: {
+                commentId: {
+                    name: 'commentId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+        },
         responses: {
             200: {
                 description: 'Success / returns liked comment',
@@ -272,9 +293,9 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot like comment',},
         }
     })
-    @httpPatch('/like/{id}')
+    @httpPatch('/like/{commentId}')
     public async likeComment(
-        @requestParam('id') id: string,
+        @requestParam('commentId') commentId: string,
         @requestParam() userId: string,
         @request() req: Request,
         @response() res: Response
@@ -282,7 +303,7 @@ export class CommentController extends ControllerBase {
         try {
 
             const likedComment: DocumentComment =
-                await this._commentService.likeComment(Types.ObjectId(id), Types.ObjectId(userId));
+                await this._commentService.likeComment(Types.ObjectId(commentId), Types.ObjectId(userId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: likedComment
@@ -298,35 +319,37 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/',
+        path: '/unlike/{commentId}',
         parameters: {
             path: {
-                id: {
-                    name: 'id',
+                commentId: {
+                    name: 'commentId',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment',
                     required: true,
                     allowEmptyValue: false
                 }
             },
-
         },
         responses: {
-            200: {description: 'Success / returns unliked comment',},
+            200: {
+                description: 'Success / returns unliked comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Comment'
+            },
             500: {description: 'Fail / cannot unlike comment',},
         }
     })
-
-    @httpPatch('/unlike/{id}')
+    @httpPatch('/unlike/{commentId}')
     public async unlikeComment(
-        @requestParam('id') id: string,
+        @requestParam('commentId') commentId: string,
         @requestParam('likeId') likeId: string,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
             const unlikedComment: DocumentComment =
-                await this._commentService.unlikeComment(Types.ObjectId(id), Types.ObjectId(likeId));
+                await this._commentService.unlikeComment(Types.ObjectId(commentId), Types.ObjectId(likeId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
