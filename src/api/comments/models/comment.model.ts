@@ -54,7 +54,7 @@ export class Comment extends Base {
     @ApiModelProperty({
         description: 'time stamp of comment creation',
         required: true,
-        example: ['20200801'],
+        example: ['1599137650207'],
     })
     @prop({required: true, default: Date.now()})
     public createdAt: number;
@@ -62,7 +62,7 @@ export class Comment extends Base {
     @ApiModelProperty({
         description: 'time stamp of last comment edition',
         required: true,
-        example: ['20200801'],
+        example: ['1599137650207'],
     })
     @prop({required: true, default: Date.now()})
     public lastEdited: number;

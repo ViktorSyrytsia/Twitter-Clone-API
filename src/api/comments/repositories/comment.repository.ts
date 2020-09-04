@@ -1,6 +1,6 @@
 import {injectable} from 'inversify';
 import {ReturnModelType} from '@typegoose/typegoose';
-import {CreateQuery, Types} from 'mongoose';
+import {CreateQuery, DocumentQuery, Types} from 'mongoose';
 
 import {DatabaseConnection} from '../../../database/database-connection';
 import {Comment, DocumentComment} from '../models/comment.model';
@@ -15,8 +15,24 @@ export class CommentRepository extends RepositoryBase<Comment> {
         this.initRepository(this._databaseConnection, Comment);
     }
 
-    public async getByTweet(tweetId: Types.ObjectId): Promise<Array<DocumentComment>> {
-        return this._repository.find({tweetId});
+    public async findById(commentId: Types.ObjectId): Promise<DocumentComment> {
+        return this._repository.findById(commentId);
+    }
+
+    public async findByTweet(tweetId: Types.ObjectId,
+                             page: number,
+                             limit: number
+    ): Promise<DocumentComment[]> {
+        let commentsQuery: DocumentQuery<DocumentComment[], DocumentComment> =
+            this._repository.find({tweetId});
+
+        if (page) {
+            commentsQuery = commentsQuery.skip(page);
+        }
+        if (limit) {
+            commentsQuery = commentsQuery.limit(limit);
+        }
+        return commentsQuery;
     }
 
     public async createComment(comment: CreateQuery<Comment>): Promise<DocumentComment> {
@@ -34,11 +50,15 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findByIdAndDelete(commentId);
     }
 
-    public async likeComment(commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
+    public async likeComment(commentId: Types.ObjectId,
+                             userId: Types.ObjectId
+    ): Promise<DocumentComment> {
         return this._repository.findByIdAndUpdate(commentId, {$push: {likes: userId}});
     }
 
-    public async unlikeComment(commentId: string, userId: Types.ObjectId): Promise<DocumentComment> {
+    public async unlikeComment(commentId: Types.ObjectId,
+                               userId: Types.ObjectId
+    ): Promise<DocumentComment> {
         return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}});
     }
 

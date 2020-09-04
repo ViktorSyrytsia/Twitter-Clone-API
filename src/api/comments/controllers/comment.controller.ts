@@ -1,4 +1,4 @@
-import {Request, Response, text} from 'express';
+import {Request, Response} from 'express';
 import {
     controller,
     httpDelete,
@@ -6,6 +6,7 @@ import {
     httpPatch,
     httpPost,
     httpPut,
+    principal,
     request,
     requestBody,
     requestParam,
@@ -26,6 +27,8 @@ import {ControllerBase} from '../../base/controller.base';
 import {CommentService} from '../services/comment.service';
 import {Comment, DocumentComment} from '../models/comment.model';
 import {HttpError} from '../../../shared/models/http.error';
+import {Types} from 'mongoose';
+import {Principal} from '../../auth/models/principal.model';
 
 @ApiPath({
     path: '/api/v1/comments',
@@ -38,42 +41,50 @@ export class CommentController extends ControllerBase {
         super();
     }
 
-
     @ApiOperationGet({
-        description: 'Get comment by tweet',
-        summary: 'Get comment by tweet id',
+        description: 'Get comments by tweet',
+        summary: 'Get comment by tweet id with pagination',
         parameters: {
-            query: {
+            path: {
                 tweetId: {
-                    type: 'text',
                     name: 'tweetId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of tweet',
                     required: true,
-                    allowEmptyValue: false,
-                    description: 'id of tweet'
+                    allowEmptyValue: false
+                }
+            },
+            query: {
+                page: {
+                    name: 'page',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    required: false,
+                },
+                limit: {
+                    name: 'limit',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    required: false
                 }
             }
         },
         responses: {
-            200: {
-                description: 'Success / returns array of comments',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot found comments',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Comment',
-            },
+            200: {description: 'Success / returns array of comments',},
+            404: {description: 'Fail / tweet not found'},
+            500: {description: 'Fail / cannot find comments'},
         }
     })
-    @httpGet('/')
+    @httpGet('/{tweetId}')
     public async getCommentsByTweet(
-        @requestParam() tweetId: string,
+        @requestParam('tweetId') tweetId: string,
+        @requestParam('page') page: number,
+        @requestParam('limit') limit: number,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
-            const comments: Array<DocumentComment> = await this._commentService.findByTweet(tweetId);
+            const comments: Array<DocumentComment> =
+                await this._commentService.findCommentByTweet(Types.ObjectId(tweetId), page, limit);
+
             return this._success<{ comments: Array<DocumentComment> }>(res, OK, {
                 comments
             });
@@ -86,29 +97,54 @@ export class CommentController extends ControllerBase {
 
     @ApiOperationPost({
         description: 'Create comment',
-        summary: 'Create comment',
-        parameters: {},
+        summary: 'Create comment with given string',
+        parameters: {
+            path: {
+                tweetId: {
+                    name: 'tweetId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of tweet',
+                    required: true
+                }
+            },
+            query: {
+                repliedCommentId: {
+                    name: 'repliedCommentId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of replied comment',
+                    required: false,
+                }
+            },
+            body: {
+                name: 'text',
+                type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                description: 'text of comment',
+                required: true,
+            }
+        },
         responses: {
-            200: {
-                description: 'Success /  returns created comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot create comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
+            201: {description: 'Success / returns created comment',},
+            404: {description: 'Fail / tweet not found'},
+            422: {description: 'Fail / text not a string'},
+            500: {description: 'Fail / cannot create comment',},
         }
     })
-    @httpPost('/')
+    @httpPost('/{tweetId}')
     public async createComment(
-        @requestBody() comment: Comment,
+        @principal() principal: Principal,
+        @requestParam('tweetId') tweetId: string,
+        @requestParam('repliedCommentId') repliedCommentId: string,
+        @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
-            const createdComment: DocumentComment = await this._commentService.createComment(comment);
+            const createdComment: DocumentComment =
+                await this._commentService.createComment(text,
+                    principal,
+                    Types.ObjectId(tweetId),
+                    Types.ObjectId(repliedCommentId));
+
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: createdComment
             });
@@ -121,32 +157,90 @@ export class CommentController extends ControllerBase {
 
     @ApiOperationPut({
         description: 'Update comment',
-        summary: 'Update comment',
-        parameters: {},
+        summary: 'Update comment with new text',
+        parameters: {
+            path: {
+                commentId: {
+                    name: 'commentId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment to update',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+            body: {
+                name: 'text',
+                type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                description: 'text of comment',
+                required: true,
+                allowEmptyValue: false,
+            }
+        },
         responses: {
-            200: {
-                description: 'Success /  returns updated comment comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot update comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
+            200: {description: 'Success / returns updated comment comment',},
+            403: {description: 'Fail / not comment author'},
+            404: {description: 'Fail / comment not found'},
+            422: {description: 'Fail / text not a string'},
+            500: {description: 'Fail / cannot update comment',},
         }
     })
-    @httpPut('/:id')
+    @httpPut('/{commentId}')
     public async updateComment(
-        @requestParam('id') id: string,
-        @requestBody() comment: Comment,
+        @principal() principal: Principal,
+        @requestParam('commentId') commentId: string,
+        @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
-            const updatedComment: DocumentComment = await this._commentService.updateById(id, comment);
+            const updatedComment: DocumentComment =
+                await this._commentService.updateComment(Types.ObjectId(commentId), text, principal);
+
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: updatedComment
+            });
+        } catch (error) {
+            return this._fail(
+                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
+    @ApiOperationDelete({
+        description: 'delete comment',
+        summary: 'delete comment by id',
+        path: '/{id}',
+        parameters: {
+            path: {
+                commentId: {
+                    name: 'commentId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment to update',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+        },
+        responses: {
+            200: {description: 'Success / returns removed comment '},
+            403: {description: 'Fail / not owner of comment'},
+            404: {description: 'Fail / comment not found'},
+            500: {description: 'Fail / cannot remove comment',},
+        }
+    })
+    @httpDelete('/{commentId}')
+    public async removeComment(
+        @principal() principal: Principal,
+        @requestParam('commentId') commentId: string,
+        @request() req: Request,
+        @response() res: Response
+    ) {
+        try {
+            const deletedComment: DocumentComment =
+                await this._commentService.deleteComment(principal,Types.ObjectId(commentId));
+
+            return this._success<{ comment: DocumentComment }>(res, OK, {
+                comment: deletedComment
             });
         } catch (error) {
             return this._fail(
@@ -158,7 +252,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/:id/like',
+        path: '/like/{id}',
         parameters: {},
         responses: {
             200: {
@@ -173,15 +267,17 @@ export class CommentController extends ControllerBase {
             },
         }
     })
-    @httpPatch('/:id/like')
+    @httpPatch('/like/{id}')
     public async likeComment(
         @requestParam('id') id: string,
-        @requestBody() comment: Comment,
+        @requestParam() userId: string,
         @request() req: Request,
         @response() res: Response
     ) {
         try {
-            const likedComment: DocumentComment = await this._commentService.likeComment(id);
+            const likedComment: DocumentComment =
+                await this._commentService.likeComment(Types.ObjectId(id), Types.ObjectId(userId));
+
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: likedComment
             });
@@ -195,22 +291,25 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/:id/unlike',
-        parameters: {},
+        path: '/',
+        parameters: {
+            path: {
+                id: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+
+        },
         responses: {
-            200: {
-                description: 'Success / returns unliked comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot unlike comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
+            200: {description: 'Success / returns unliked comment',},
+            500: {description: 'Fail / cannot unlike comment',},
         }
     })
-    @httpPatch('/:id/unlike')
+    @httpPatch('/unlike/{id}')
     public async unlikeComment(
         @requestParam('id') id: string,
         @requestParam('likeId') likeId: string,
@@ -218,7 +317,9 @@ export class CommentController extends ControllerBase {
         @response() res: Response
     ) {
         try {
-            const unlikedComment: DocumentComment = await this._commentService.unlikeComment(id, likeId);
+            const unlikedComment: DocumentComment =
+                await this._commentService.unlikeComment(Types.ObjectId(id), Types.ObjectId(likeId));
+
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
             });
@@ -229,40 +330,6 @@ export class CommentController extends ControllerBase {
         }
     }
 
-    @ApiOperationDelete({
-        description: 'remove comment',
-        summary: 'remove comment by id',
-        path: '/:id',
-        parameters: {},
-        responses: {
-            200: {
-                description: 'Success / returns removed comment ',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-            500: {
-                description: 'Fail / cannot remove comment',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment',
-            },
-        }
-    })
-    @httpDelete('/:id')
-    public async removeComment(
-        @requestParam('id') id: string,
-        @request() req: Request,
-        @response() res: Response
-    ) {
-        try {
-            const unlikedComment: DocumentComment = await this._commentService.deleteComment(id);
-            return this._success<{ comment: DocumentComment }>(res, OK, {
-                comment: unlikedComment
-            });
-        } catch (error) {
-            return this._fail(
-                res, new HttpError(INTERNAL_SERVER_ERROR, error.message)
-            );
-        }
-    }
+
 }
 
