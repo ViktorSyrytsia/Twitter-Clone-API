@@ -66,7 +66,5 @@ export class CommentRepository extends RepositoryBase<Comment> {
         const comments = await this._repository.find({replyToComment: commentId});
         return comments.length;
     }
-
-
 }
 
