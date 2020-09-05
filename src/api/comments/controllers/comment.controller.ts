@@ -45,7 +45,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comments by tweet',
         summary: 'Get comment by tweet id with pagination',
-        path: '/:tweetId',
+        path: '/{tweetId}',
         parameters: {
             path: {
                 tweetId: {
@@ -118,7 +118,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get replied comments',
         summary: 'Get replied comment by comment id with pagination',
-        path: '/:commentId',
+        path: '/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -191,7 +191,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPost({
         description: 'Create comment',
         summary: 'Create comment with given string',
-        path: '/:tweetId',
+        path: '/{tweetId}',
         parameters: {
             path: {
                 tweetId: {
@@ -262,7 +262,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPut({
         description: 'Update comment',
         summary: 'Update comment with new text',
-        path: '/:commentId',
+        path: '/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -327,7 +327,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationDelete({
         description: 'delete comment',
         summary: 'delete comment by id',
-        path: '/:commentId',
+        path: '/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -381,7 +381,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/like/:commentId',
+        path: '/like/{commentId}',
         parameters: {
             path: {
                 commentId: {
@@ -443,7 +443,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/unlike/:commentId',
+        path: '/unlike/{commentId}',
         parameters: {
             path: {
                 commentId: {
