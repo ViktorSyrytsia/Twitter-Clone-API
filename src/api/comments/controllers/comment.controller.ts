@@ -7,12 +7,13 @@ import {
     httpPost,
     httpPut,
     principal,
+    queryParam,
     request,
     requestBody,
     requestParam,
     response,
 } from 'inversify-express-utils';
-import {INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
+import {BAD_REQUEST, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
 import {
     ApiOperationDelete,
     ApiOperationGet,
@@ -44,7 +45,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get comments by tweet',
         summary: 'Get comment by tweet id with pagination',
-        path: '/{tweetId}',
+        path: '/:tweetId',
         parameters: {
             path: {
                 tweetId: {
@@ -56,17 +57,21 @@ export class CommentController extends ControllerBase {
                 }
             },
             query: {
-                page: {
-                    name: 'page',
-                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                skip: {
+                    type: 'number',
                     required: false,
+                    allowEmptyValue: true,
+                    name: 'skip',
+                    description: 'Skip count',
                 },
                 limit: {
+                    type: 'number',
+                    required: false,
+                    allowEmptyValue: true,
                     name: 'limit',
-                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
-                    required: false
-                }
-            }
+                    description: 'Limit count',
+                },
+            },
         },
         responses: {
             200: {
@@ -78,19 +83,102 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot find comments'},
         }
     })
-    @httpGet('/{tweetId}')
+    @httpGet('/:tweetId')
     public async getCommentsByTweet(
         @requestParam('tweetId') tweetId: string,
-        @requestParam('page') page: number,
-        @requestParam('limit') limit: number,
+        @queryParam('skip') skip: string,
+        @queryParam('limit') limit: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!tweetId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            const comments: Array<DocumentComment> =
-                await this._commentService.findCommentByTweet(Types.ObjectId(tweetId), page, limit);
+            const comments: Object[] =
+                await this._commentService.findCommentByTweet(
+                    new Types.ObjectId(tweetId),
+                    Number.parseInt(skip),
+                    Number.parseInt(limit)
+                );
 
-            return this._success<{ comments: Array<DocumentComment> }>(res, OK, {
+            return this._success<{ comments: Object[] }>(res, OK, {
+                comments
+            });
+        } catch (error) {
+            return this._fail(
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
+    @ApiOperationGet({
+        description: 'Get replied comments',
+        summary: 'Get replied comment by comment id with pagination',
+        path: '/:commentId',
+        parameters: {
+            path: {
+                commentId: {
+                    name: 'commentId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+            query: {
+                skip: {
+                    type: 'number',
+                    required: false,
+                    allowEmptyValue: true,
+                    name: 'skip',
+                    description: 'Skip count',
+                },
+                limit: {
+                    type: 'number',
+                    required: false,
+                    allowEmptyValue: true,
+                    name: 'limit',
+                    description: 'Limit count',
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: 'Success / returns array of comments',
+                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+                model: 'Comment'
+            },
+            404: {description: 'Fail / comment not found'},
+            500: {description: 'Fail / cannot find comments'},
+        }
+    })
+    @httpGet('/:commentId')
+    public async getRepliedCommentsByCommentId(
+        @requestParam('commentId') commentId: string,
+        @queryParam('skip') skip: string,
+        @queryParam('limit') limit: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        if (!commentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'CommentId id is missing')
+            );
+        }
+        try {
+            const comments: Object[] =
+                await this._commentService.findRepliedComments(
+                    new Types.ObjectId(commentId),
+                    Number.parseInt(skip),
+                    Number.parseInt(limit)
+                );
+
+            return this._success<{ comments: Object[] }>(res, OK, {
                 comments
             });
         } catch (error) {
@@ -103,7 +191,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPost({
         description: 'Create comment',
         summary: 'Create comment with given string',
-        path: '/{tweetId}',
+        path: '/:tweetId',
         parameters: {
             path: {
                 tweetId: {
@@ -139,21 +227,27 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot create comment',},
         }
     })
-    @httpPost('/{tweetId}')
+    @httpPost('/:tweetId')
     public async createComment(
         @principal() principal: Principal,
         @requestParam('tweetId') tweetId: string,
-        @requestParam('repliedCommentId') repliedCommentId: string,
+        @queryParam('repliedCommentId') repliedCommentId: string,
         @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!tweetId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
             const createdComment: DocumentComment =
                 await this._commentService.createComment(text,
                     principal,
-                    Types.ObjectId(tweetId),
-                    Types.ObjectId(repliedCommentId));
+                    new Types.ObjectId(tweetId),
+                    new Types.ObjectId(repliedCommentId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: createdComment
@@ -168,7 +262,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPut({
         description: 'Update comment',
         summary: 'Update comment with new text',
-        path: '/{commentId}',
+        path: '/:commentId',
         parameters: {
             path: {
                 commentId: {
@@ -199,17 +293,26 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot update comment',},
         }
     })
-    @httpPut('/{commentId}')
+    @httpPut('/:commentId')
     public async updateComment(
         @principal() principal: Principal,
         @requestParam('commentId') commentId: string,
         @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!commentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
             const updatedComment: DocumentComment =
-                await this._commentService.updateComment(Types.ObjectId(commentId), text, principal);
+                await this._commentService.updateComment(
+                    new Types.ObjectId(commentId),
+                    text,
+                    principal);
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: updatedComment
@@ -224,7 +327,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationDelete({
         description: 'delete comment',
         summary: 'delete comment by id',
-        path: '/{commentId}',
+        path: '/:commentId',
         parameters: {
             path: {
                 commentId: {
@@ -247,16 +350,22 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot remove comment',},
         }
     })
-    @httpDelete('/{commentId}')
+    @httpDelete('/:commentId')
     public async deleteComment(
         @principal() principal: Principal,
         @requestParam('commentId') commentId: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!commentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
             const deletedComment: DocumentComment =
-                await this._commentService.deleteComment(principal, Types.ObjectId(commentId));
+                await this._commentService.deleteComment(principal, new Types.ObjectId(commentId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: deletedComment
@@ -272,7 +381,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/like/{commentId}',
+        path: '/like/:commentId',
         parameters: {
             path: {
                 commentId: {
@@ -293,17 +402,32 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot like comment',},
         }
     })
-    @httpPatch('/like/{commentId}')
+    @httpPatch('/like/:commentId')
     public async likeComment(
         @requestParam('commentId') commentId: string,
         @requestParam() userId: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!commentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
+        if (!userId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'User id is missing')
+            );
+        }
         try {
 
             const likedComment: DocumentComment =
-                await this._commentService.likeComment(Types.ObjectId(commentId), Types.ObjectId(userId));
+                await this._commentService.likeComment(
+                    new Types.ObjectId(commentId),
+                    new Types.ObjectId(userId)
+                );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: likedComment
@@ -319,7 +443,7 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/unlike/{commentId}',
+        path: '/unlike/:commentId',
         parameters: {
             path: {
                 commentId: {
@@ -340,16 +464,31 @@ export class CommentController extends ControllerBase {
             500: {description: 'Fail / cannot unlike comment',},
         }
     })
-    @httpPatch('/unlike/{commentId}')
+    @httpPatch('/unlike/:commentId')
     public async unlikeComment(
         @requestParam('commentId') commentId: string,
         @requestParam('likeId') likeId: string,
         @request() req: Request,
         @response() res: Response
-    ) {
+    ): Promise<Response> {
+        if (!commentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
+        if (!likeId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Like id is missing')
+            );
+        }
         try {
             const unlikedComment: DocumentComment =
-                await this._commentService.unlikeComment(Types.ObjectId(commentId), Types.ObjectId(likeId));
+                await this._commentService.unlikeComment(
+                    new Types.ObjectId(commentId),
+                    new Types.ObjectId(likeId)
+                );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment

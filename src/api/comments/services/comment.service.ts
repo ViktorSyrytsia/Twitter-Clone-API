@@ -3,39 +3,23 @@ import {CommentRepository} from '../repositories/comment.repository';
 import {Comment, DocumentComment} from '../models/comment.model';
 import {Types} from 'mongoose';
 import {Principal} from '../../auth/models/principal.model';
-import {CommentNotFoundError} from '../models/errors/CommentNotFound.error';
-import {NotOwnerOfCommentError} from '../models/errors/NotOwnerOfComment.error';
+import {HttpError} from '../../../shared/models/http.error';
+import {FORBIDDEN, NOT_FOUND} from 'http-status-codes';
 
 @injectable()
 export class CommentService {
     constructor(private _commentRepository: CommentRepository) {
     }
 
-    public async findCommentByTweet(tweetId: Types.ObjectId,
-                                    page: number,
-                                    limit: number
-    ): Promise<DocumentComment[]> {
-        let comments: DocumentComment[] = await this._commentRepository.findByTweet(tweetId, page, limit);
-
-        comments.map(comment => ({
-            authorId: comment.authorId,
-            tweetId: comment.tweetId,
-            replyToComment: (async () => {
-                await this._commentRepository.findNumberOfReplies(comment._id);
-            })(),
-            text: comment.text,
-            likes: comment.likes.length,
-            createdAt: comment.createdAt,
-            lastEdited: comment.lastEdited,
-        }));
-        return comments;
+    public async findCommentByTweet(tweetId: Types.ObjectId, skip: number, limit: number): Promise<Object[]> {
+        return await this._commentRepository.findByTweet(tweetId, skip, limit);
     }
 
-    public async createComment(text: string,
-                               principal: Principal,
-                               tweetId: Types.ObjectId,
-                               repliedCommentId
-    ): Promise<DocumentComment> {
+    public async findRepliedComments(commentId: Types.ObjectId, skip: number, limit: number) {
+        return await this._commentRepository.findRepliedCommentsByCommentId(commentId,skip,limit);
+    }
+
+    public async createComment(text: string, principal: Principal, tweetId: Types.ObjectId, repliedCommentId): Promise<DocumentComment> {
         const comment = new Comment({
             authorId: principal.details._id,
             tweetId: tweetId,
@@ -48,18 +32,15 @@ export class CommentService {
         return this._commentRepository.createComment(comment);
     }
 
-    public async updateComment(commentId: Types.ObjectId,
-                               text: string,
-                               principal: Principal
-    ): Promise<DocumentComment> {
+    public async updateComment(commentId: Types.ObjectId, text: string, principal: Principal): Promise<DocumentComment> {
         const comment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
-            throw new CommentNotFoundError(404, 'comment not found');
+            throw new HttpError(NOT_FOUND, 'comment not found');
         }
 
         if (comment.authorId !== principal.details._id) {
-            throw new NotOwnerOfCommentError(403, 'not owner of comment');
+            throw new HttpError(FORBIDDEN, 'not owner of comment');
         }
 
         comment.text = text;
@@ -72,23 +53,21 @@ export class CommentService {
         const comment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
-            throw new CommentNotFoundError(404, 'comment not found');
+            throw new HttpError(NOT_FOUND, 'comment not found');
         }
         if (comment.authorId !== principal.details._id) {
-            throw new NotOwnerOfCommentError(403, 'not owner of comment');
+            throw new HttpError(FORBIDDEN, 'not owner of comment');
         }
-        return this._commentRepository.removeComment(commentId);
+        return this._commentRepository.deleteComment(commentId);
     }
 
-    public async likeComment(commentId: Types.ObjectId,
-                             userId: Types.ObjectId
-    ): Promise<DocumentComment> {
+    public async likeComment(commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
         return this._commentRepository.likeComment(commentId, userId);
     }
 
-    public async unlikeComment(commentId: Types.ObjectId,
-                               userId: Types.ObjectId
-    ): Promise<DocumentComment> {
+    public async unlikeComment(commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
         return this._commentRepository.unlikeComment(commentId, userId);
     }
+
+
 }
