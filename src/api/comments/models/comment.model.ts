@@ -4,7 +4,7 @@ import {CreateQuery, Types} from 'mongoose';
 import {ApiModel, ApiModelProperty} from 'swagger-express-typescript';
 
 import {User} from '../../users/models/user.model';
-import {Tweet} from './tweet.model';
+import {Tweet} from '../../tweets/models/tweet.model';
 
 @ApiModel({
     description: 'Model of Comment',
@@ -66,6 +66,10 @@ export class Comment extends Base {
     })
     @prop({required: true, default: Date.now()})
     public lastEdited: number;
+
+    public get likesCount() {
+        return this.likes.length;
+    }
 
     constructor(comment: CreateQuery<Comment>) {
         super();
