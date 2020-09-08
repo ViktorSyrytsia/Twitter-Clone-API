@@ -58,7 +58,7 @@ export class User extends Base {
         example: ['https://googledrive.com/images/my_avatar'],
     })
     @prop({ required: false })
-    public avatar: string;
+    public avatar?: string;
 
     @ApiModelProperty({
         description:
@@ -67,7 +67,7 @@ export class User extends Base {
         example: [true],
     })
     @prop({ required: false, default: false })
-    public active: boolean;
+    public active?: boolean;
 
     @ApiModelProperty({
         description: 'User role: \'User\' = \'user\', \'Admin\' = \'admin\'',
@@ -75,7 +75,7 @@ export class User extends Base {
         example: [['user', 'admin'], ['admin']],
     })
     @prop({ required: true, default: 'user' })
-    public roles: RolesEnum;
+    public roles?: RolesEnum;
 
     @ApiModelProperty({
         description: 'List of followers usersId',
@@ -83,7 +83,7 @@ export class User extends Base {
         example: [['5f423af74c9234267e6aa6ea', '5f423af74c9234267e6acccc']],
     })
     @prop({ ref: () => User, required: false, default: [] })
-    public followers: Ref<User>[];
+    public followers?: Ref<User>[];
 
     @ApiModelProperty({
         description: 'UserCreated time stamp',
@@ -91,7 +91,7 @@ export class User extends Base {
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
-    public createdAt: number;
+    public createdAt?: number;
 
     @ApiModelProperty({
         description: 'UserUpdated time stamp',
@@ -99,7 +99,7 @@ export class User extends Base {
         example: ['20200823'],
     })
     @prop({ required: false, default: Date.now() })
-    public lastUpdated: number;
+    public lastUpdated?: number;
 
     @ApiModelProperty({
         description: 'Is user followed by current user',

@@ -58,19 +58,19 @@ export class UsersController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns dto with user',
+                description: 'Returns dto with user',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'User',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -110,19 +110,19 @@ export class UsersController extends ControllerBase {
         parameters: {},
         responses: {
             200: {
-                description: 'Success /  returns dto with current user',
+                description: 'Returns dto with current user',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -167,19 +167,19 @@ export class UsersController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns user dto',
+                description: 'Returns user dto',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -224,19 +224,19 @@ export class UsersController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / return updated user',
+                description: 'Return updated user',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -273,19 +273,18 @@ export class UsersController extends ControllerBase {
         parameters: {},
         responses: {
             200: {
-                description: 'Success / return null',
+                description: 'Return null',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -340,19 +339,19 @@ export class UsersController extends ControllerBase {
                 model: 'User',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {
@@ -413,19 +412,19 @@ export class UsersController extends ControllerBase {
                 model: 'User',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / user not found',
+                description: 'User not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'User',
+                model: 'HttpError',
             },
         },
         security: {

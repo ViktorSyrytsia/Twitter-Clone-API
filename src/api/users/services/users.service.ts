@@ -55,6 +55,12 @@ export class UsersService {
         return this._usersRepository.updateUser(userId, data);
     }
 
+    public async activateUser(
+        userId: Types.ObjectId
+    ): Promise<DocumentUser> {
+        return this._usersRepository.activateUser(userId);
+    }
+
     public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
         return this._usersRepository.followUser(userId, userIdToFollow);
     }
@@ -63,3 +69,4 @@ export class UsersService {
         return this._usersRepository.unfollowUser(userId, userIdToFollow);
     }
 }
+

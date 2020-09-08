@@ -51,19 +51,19 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns tweet dto',
+                description: 'Returns tweet dto',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -117,19 +117,19 @@ export class TweetsController extends ControllerBase {
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -168,24 +168,24 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns tweet dto',
+                description: 'Returns tweet dto',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -233,24 +233,24 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns tweet dto',
+                description: 'Returns tweet dto',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -317,24 +317,24 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns tweets dto',
+                description: 'Returns tweets dto',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweets not found',
+                description: 'Tweets not found',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -393,24 +393,24 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns tweet dto',
+                description: 'Returns tweet dto',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -471,19 +471,19 @@ export class TweetsController extends ControllerBase {
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -542,24 +542,24 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success /  returns tweets dto',
+                description: 'Returns tweets dto',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweets not found',
+                description: 'Tweets not found',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -606,19 +606,19 @@ export class TweetsController extends ControllerBase {
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
         },
         security: {
@@ -673,17 +673,16 @@ export class TweetsController extends ControllerBase {
             200: {
                 description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Error'
             },
             400: {
                 description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Error'
+                model: 'HttpError',
             },
             401: {
                 description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Error'
+                model: 'HttpError',
             }
         },
         security: {

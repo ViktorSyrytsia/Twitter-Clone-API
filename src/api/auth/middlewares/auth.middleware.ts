@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { Principal } from '../models/principal.model';
 import { AuthService } from '../services/auth.service';
+import { UNAUTHORIZED } from 'http-status-codes';
 
 @injectable()
 export class AuthMiddleware extends BaseMiddleware {
@@ -23,7 +24,7 @@ export class AuthMiddleware extends BaseMiddleware {
         if (await principal.isAuthenticated()) {
             next();
         } else {
-            res.status(402).json({
+            res.status(UNAUTHORIZED).json({
                 status: 'failed',
                 message: 'Unauthorized'
             });

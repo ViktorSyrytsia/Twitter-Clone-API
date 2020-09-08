@@ -92,6 +92,12 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._repository.findByIdAndUpdate(userId, data, { new: true });
     }
 
+    public async activateUser(
+        userId: Types.ObjectId
+    ): Promise<DocumentUser> {
+        return this._repository.findByIdAndUpdate(userId, { $set: { active: true}}, { new: true });
+    }
+
     public async deleteUser(userId: Types.ObjectId): Promise<DocumentUser> {
         return this._repository.findByIdAndDelete(userId);
     }
