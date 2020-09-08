@@ -105,7 +105,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         return findTweetsQuery
             .map(async (tweets: DocumentTweet[]) => {
                 for (let i = 0; i < tweets.length; i++) {
-                    tweets[i] = await this._addFields(tweets[i])
+                    tweets[i] = await this._addFields(tweets[i], principal)
                 }
                 return tweets
             })
