@@ -71,10 +71,10 @@ export class TweetsController extends ControllerBase {
     ): Promise<Response> {
         try {
             const newTweet: DocumentTweet = await this._tweetsService.createTweet(
-                {
+                new Tweet({
                     ...tweet,
                     authorId: principal.details._id
-                }
+                })
             );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: newTweet });
         } catch (error) {
@@ -608,22 +608,22 @@ export class TweetsController extends ControllerBase {
     public async createRetweet(
         @requestBody() tweet: Tweet,
         @request() req: Request,
-        @response() res: Response
+        @response() res: Response,
+        @principal() principal: Principal,
     ): Promise<Response> {
         try {
-            if (!tweet.authorId) {
-                return this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'AuthorId id is missing')
-                );
-            }
             if (!tweet.retweetedTweet) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
                 );
             }
-            const retweet: DocumentTweet = await this._tweetsService.createTweet(new Tweet({ ...tweet }))
+            const retweet: DocumentTweet = await this._tweetsService.createTweet(
+                new Tweet({
+                    ...tweet,
+                    authorId: principal.details._id
+                })
+            )
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: retweet });
         } catch (error) {
             return this._fail(

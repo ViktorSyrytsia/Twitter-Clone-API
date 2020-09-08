@@ -104,14 +104,8 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         }
         return findTweetsQuery
             .map(async (tweets: DocumentTweet[]) => {
-                for (const tweet of tweets) {
-                    tweet.likesCount = tweet.likes.length;
-                    tweet.liked = principal ? tweet.likes.includes(principal.details._id) : false;
-                    tweet.retweetsCount = (await this._repository.find({ retweetedTweet: tweet._id })).length
-                    tweet.retweeted = principal ? !!(await this._repository.findOne({
-                        retweetedTweet: tweet._id,
-                        authorId: principal.details._id
-                    })) : false;
+                for (let i = 0; i < tweets.length; i++) {
+                    tweets[i] = await this._addFields(tweets[i])
                 }
                 return tweets
             })
@@ -123,5 +117,16 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
                     limit: 10
                 }
             })
+    }
+
+    private async _addFields(tweet: DocumentTweet, principal?: Principal): Promise<DocumentTweet> {
+        tweet.likesCount = tweet.likes.length;
+        tweet.isLiked = principal ? tweet.likes.includes(principal.details._id) : false;
+        tweet.retweetsCount = (await this._repository.find({ retweetedTweet: tweet._id })).length
+        tweet.isRetweeted = principal ? !!(await this._repository.findOne({
+            retweetedTweet: tweet._id,
+            authorId: principal.details._id
+        })) : false;
+        return tweet
     }
 }

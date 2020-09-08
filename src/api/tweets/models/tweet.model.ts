@@ -13,10 +13,10 @@ export class Tweet extends Base {
 
     @ApiModelProperty({
         description: 'Tweet User',
-        required: true,
+        required: false,
         example: ['5f423af74c9234267e6aa6ea'],
     })
-    @prop({ ref: () => User, required: false })
+    @prop({ ref: () => User, required: true })
     public authorId: Ref<User>;
 
     @ApiModelProperty({
@@ -29,23 +29,23 @@ export class Tweet extends Base {
 
     @ApiModelProperty({
         description: 'Likes',
-        required: true,
+        required: false,
         example: [['ObjectId1', 'ObjectId2']],
     })
-    @prop({ ref: () => User, required: false })
+    @prop({ ref: () => User, required: false, default: [] })
     public likes: Ref<User>[]
 
     @ApiModelProperty({
         description: 'Retweets',
-        required: true,
+        required: false,
         example: ['ObjectId']
     })
-    @prop({ ref: () => Tweet, required: false })
+    @prop({ ref: () => Tweet, required: false, default: null })
     public retweetedTweet: Ref<Tweet>;
 
     @ApiModelProperty({
         description: 'Tweet timestamp of created',
-        required: true,
+        required: false,
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
@@ -53,7 +53,7 @@ export class Tweet extends Base {
 
     @ApiModelProperty({
         description: 'Tweet timestamp of lastEdited',
-        required: true,
+        required: false,
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
@@ -78,7 +78,7 @@ export class Tweet extends Base {
         required: false,
         example: [true],
     })
-    public liked?: boolean
+    public isLiked?: boolean
 
     @ApiModelProperty({
         description: 'Retweets count',
@@ -92,10 +92,14 @@ export class Tweet extends Base {
         required: false,
         example: [false],
     })
-    public retweeted?: boolean
+    public isRetweeted?: boolean
 
     constructor(tweet: CreateQuery<Tweet>) {
         super();
+        this.isLiked = false;
+        this.likesCount = 0;
+        this.isRetweeted = false;
+        this.retweetsCount = 0;
         Object.assign(this, tweet);
     }
 }
