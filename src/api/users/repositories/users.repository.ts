@@ -122,12 +122,13 @@ export class UsersRepository extends RepositoryBase<User> {
         return findUsersQuery
             .select('_id username firstName lastName avatar followers')
             .map(async (users: DocumentUser[]) => {
-            for (const user of users) {
-                user.isFollower = principal ? principal.details.followers.includes(user._id) : false;
-                user.isFollowing = principal ? user.followers.includes(principal.details._id) : false;
-            }
-            return users
-        })
+                for (let i: number = 0; i< users.length; i++) {
+                    users[i].isFollower = principal ? principal.details.followers.includes(users[i]._id) : false;
+                    users[i].isFollowing = principal ? users[i].followers.includes(principal.details._id) : false;
+                    delete users[i].followers
+                }
+                return users
+            })
     }
 
     public async unfollowUser(userId: Types.ObjectId, userIdToUnFollow: Types.ObjectId): Promise<DocumentUser> {
