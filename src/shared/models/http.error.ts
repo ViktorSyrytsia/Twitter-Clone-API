@@ -11,7 +11,7 @@ export class HttpError extends Error {
         required: true,
         example: ['fail'],
     })
-    public status: string = 'fail';
+    public readonly status: string = 'fail';
 
     @ApiModelProperty({
         description: 'Error status code',
@@ -25,7 +25,7 @@ export class HttpError extends Error {
         required: true,
         example: ['Message Text'],
     })
-    public message: string;
+    public readonly message: string;
 
     constructor(code: number, message: string) {
         super(message);
