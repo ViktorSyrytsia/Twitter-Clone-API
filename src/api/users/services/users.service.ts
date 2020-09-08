@@ -3,6 +3,7 @@ import { Types, UpdateQuery } from 'mongoose';
 
 import { UsersRepository } from '../repositories/users.repository';
 import { DocumentUser, User } from '../models/user.model';
+import { Principal } from '../../auth/models/principal.model';
 
 @injectable()
 export class UsersService {
@@ -33,6 +34,14 @@ export class UsersService {
 
     public async findById(userId: Types.ObjectId): Promise<DocumentUser> {
         return this._usersRepository.findById(userId);
+    }
+
+    public async findByLikes(userIds: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
+        return this._usersRepository.findByLikes(userIds, principal, skip, limit);
+    }
+
+    public async getFollowingUsersIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
+        return this._usersRepository.getFollowingUsersIdsByUserId(userId);
     }
 
     public async deleteUserById(userId: Types.ObjectId): Promise<DocumentUser> {

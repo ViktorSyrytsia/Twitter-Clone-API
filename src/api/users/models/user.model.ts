@@ -82,7 +82,7 @@ export class User extends Base {
         required: false,
         example: [['5f423af74c9234267e6aa6ea', '5f423af74c9234267e6acccc']],
     })
-    @prop({ required: false, default: [] })
+    @prop({ ref: () => User, required: false, default: [] })
     public followers: Ref<User>[];
 
     @ApiModelProperty({
@@ -100,6 +100,20 @@ export class User extends Base {
     })
     @prop({ required: false, default: Date.now() })
     public lastUpdated: number;
+
+    @ApiModelProperty({
+        description: 'Is user followed by current user',
+        required: false,
+        example: [false],
+    })
+    public isFollowing?: boolean;
+
+    @ApiModelProperty({
+        description: 'Is user follower of current user',
+        required: false,
+        example: [false],
+    })
+    public isFollower?: boolean;
 
     constructor(user: CreateQuery<User>) {
         super();

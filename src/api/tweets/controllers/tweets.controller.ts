@@ -7,7 +7,7 @@ import {
     ApiOperationDelete, ApiOperationGet, ApiOperationPost, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
 import { Types } from 'mongoose';
-import { INTERNAL_SERVER_ERROR, OK, BAD_REQUEST } from 'http-status-codes';
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 
 import { ControllerBase } from '../../base/controller.base';
 import { TweetsService } from '../services/tweets.service';
@@ -15,6 +15,7 @@ import { DocumentTweet, Tweet } from '../models/tweet.model';
 import { Principal } from '../../auth/models/principal.model';
 import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 import { HttpError } from '../../../shared/models/http.error';
+import { DocumentUser } from '../../users/models/user.model';
 
 @ApiPath({
     path: '/api/v1/tweets',
@@ -133,7 +134,7 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -246,7 +247,7 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -264,7 +265,7 @@ export class TweetsController extends ControllerBase {
 
     @ApiOperationGet({
         description: 'Find tweets object by Author id/' +
-        'If there is a tweetRetweet in this object it means that it is a retweet',
+            'If there is a tweetRetweet in this object it means that it is a retweet',
         summary: 'Find tweets',
         parameters: {
             query: {
@@ -323,12 +324,13 @@ export class TweetsController extends ControllerBase {
     public async findTweetByAuthorId(
         @queryParam('skip') skip: string,
         @queryParam('limit') limit: string,
+        @principal() principal: Principal,
         @requestParam('id') id,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Author id is missing')
@@ -336,6 +338,7 @@ export class TweetsController extends ControllerBase {
             }
             const tweet: DocumentTweet[] = await this._tweetsService.findTweetsByAuthorId(
                 new Types.ObjectId(id),
+                principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
             );
@@ -401,7 +404,7 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -474,7 +477,7 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -496,7 +499,7 @@ export class TweetsController extends ControllerBase {
 
     @ApiOperationGet({
         description: 'Find tweets object by following/' +
-        'If there is a tweetRetweet in this object it means that it is a retweet',
+            'If there is a tweetRetweet in this object it means that it is a retweet',
         summary: 'Find tweets',
         parameters: {
             query: {
@@ -551,9 +554,8 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const userId: Types.ObjectId = principal.details._id;
             const tweets: DocumentTweet[] = await this._tweetsService.findTweetsByFollowing(
-                userId,
+                principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
             );
@@ -570,15 +572,6 @@ export class TweetsController extends ControllerBase {
         description: 'Retweet tweet object',
         summary: 'Retweet tweet',
         parameters: {
-            path: {
-                id: {
-                    type: 'string',
-                    name: 'id',
-                    allowEmptyValue: false,
-                    description: 'Id of tweet to retweet',
-                    required: true
-                }
-            },
             body: {
                 description: 'Retweet tweet',
                 required: true,
@@ -630,12 +623,138 @@ export class TweetsController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
                 );
             }
-            const newTweet: DocumentTweet = await this._tweetsService.createTweet(
-                {
-                    ...tweet
+            const retweet: DocumentTweet = await this._tweetsService.createTweet(new Tweet({ ...tweet }))
+            return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: retweet });
+        } catch (error) {
+            return this._fail(
+                res,
+                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
+    @ApiOperationGet({
+        description: 'Find retweets by tweet id',
+        summary: 'Find retweets by tweet id',
+        parameters: {
+            path: {
+                id: {
+                    type: 'string',
+                    name: 'id',
+                    allowEmptyValue: false,
+                    description: 'Id of tweet',
+                    required: true
                 }
+            }
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            },
+            400: {
+                description: 'Fail/ Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            },
+            401: {
+                description: 'Fail / unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            }
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpGet('/retweets/:id', AuthMiddleware)
+    public async findRetweetsByTweetId(
+        @requestParam('id') id: string,
+        @principal() principal: Principal,
+        @queryParam('skip') skip: string,
+        @queryParam('limit') limit: string,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            if (!id) {
+                return this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                );
+            }
+            const retweets: DocumentTweet[] = await this._tweetsService.findRetweetsByTweetId(
+                new Types.ObjectId(id),
+                principal,
+                Number.parseInt(skip),
+                Number.parseInt(limit)
             )
-            return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: newTweet });
+            return this._success<{ tweets: DocumentTweet[] }>(res, OK, { tweets: retweets });
+        } catch (error) {
+            return this._fail(
+                res,
+                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
+    @ApiOperationGet({
+        description: 'Find users by tweet likes',
+        summary: 'Find users by tweet likes',
+        parameters: {
+            path: {
+                id: {
+                    type: 'string',
+                    name: 'id',
+                    allowEmptyValue: false,
+                    description: 'Id of tweet',
+                    required: true
+                }
+            }
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            },
+            400: {
+                description: 'Fail/ Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            },
+            401: {
+                description: 'Fail / unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            }
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpGet('/likes/:id', AuthMiddleware)
+    public async findLikesUsersByTweetId(
+        @requestParam('id') id: string,
+        @principal() principal: Principal,
+        @queryParam('skip') skip: string,
+        @queryParam('limit') limit: string,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            if (!id) {
+                return this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                );
+            }
+            const users: DocumentUser[] = await this._tweetsService.findLikesUsersByTweetId(
+                new Types.ObjectId(id),
+                principal,
+                Number.parseInt(skip),
+                Number.parseInt(limit)
+            )
+            return this._success<{ users: DocumentUser[] }>(res, OK, { users });
         } catch (error) {
             return this._fail(
                 res,

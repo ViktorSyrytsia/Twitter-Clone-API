@@ -5,6 +5,7 @@ import { CreateQuery, DocumentQuery, Types } from 'mongoose';
 import { DatabaseConnection } from '../../../database/database-connection';
 import { DocumentUser, User } from '../models/user.model';
 import { RepositoryBase } from '../../base/repository.base';
+import { Principal } from '../../auth/models/principal.model';
 
 @injectable()
 export class UsersRepository extends RepositoryBase<User> {
@@ -95,7 +96,7 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._repository.findByIdAndDelete(userId);
     }
 
-    public async getFollowingUserIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
+    public async getFollowingUsersIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
         return this._repository.find({ followers: userId }).map((user: DocumentUser[]) => {
             return user.map((_user: DocumentUser) => _user._id)
         })
@@ -106,6 +107,27 @@ export class UsersRepository extends RepositoryBase<User> {
             { _id: userIdToFollow },
             { $push: { followers: userId } }
         )
+    }
+
+    public async findByLikes(usersIds: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
+        let findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
+            .find({ _id: { $in: usersIds } });
+
+        if (skip) {
+            findUsersQuery = findUsersQuery.skip(skip);
+        }
+        if (limit) {
+            findUsersQuery = findUsersQuery.limit(limit)
+        }
+        return findUsersQuery
+            .select('_id username firstName lastName avatar followers')
+            .map(async (users: DocumentUser[]) => {
+            for (const user of users) {
+                user.isFollower = principal ? principal.details.followers.includes(user._id) : false;
+                user.isFollowing = principal ? user.followers.includes(principal.details._id) : false;
+            }
+            return users
+        })
     }
 
     public async unfollowUser(userId: Types.ObjectId, userIdToUnFollow: Types.ObjectId): Promise<DocumentUser> {
