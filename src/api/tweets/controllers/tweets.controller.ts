@@ -34,11 +34,19 @@ export class TweetsController extends ControllerBase {
     @ApiOperationPost({
         description: 'Post tweet object',
         summary: 'Post new tweet',
+        path: '/',
         parameters: {
             body: {
                 description: 'Post tweet',
                 required: true,
-                model: 'Tweet',
+                allowEmptyValue: false,
+                properties: {
+                    text: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                    }
+                }
             },
         },
         responses: {
@@ -85,6 +93,7 @@ export class TweetsController extends ControllerBase {
     @ApiOperationDelete({
         description: 'Delete tweet object',
         summary: 'Delete tweet',
+        path: '/{id}',
         parameters: {
             path: {
                 id: {
@@ -186,23 +195,31 @@ export class TweetsController extends ControllerBase {
     @httpPut('/', AuthMiddleware)
     public async updateTweet(
         @requestBody() tweet: Tweet,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response,
     ): Promise<Response> {
         try {
-            const updatedTweet: DocumentTweet = await this._tweetsService.updateTweet(tweet);
+            if (!tweet._id) {
+                this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                )
+            }
+            const updatedTweet: DocumentTweet = await this._tweetsService.updateTweet(tweet, principal);
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: updatedTweet });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
 
     @ApiOperationGet({
-        description: 'Find tweet object by id',
+        description: 'Find tweet by id',
         summary: 'Find tweet',
+        path: '/{id}',
         parameters: {
             path: {
                 id: {
@@ -243,6 +260,7 @@ export class TweetsController extends ControllerBase {
     @httpGet('/:id', AuthMiddleware)
     public async findTweetById(
         @requestParam('id') id: string,
+        @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -253,7 +271,10 @@ export class TweetsController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
                 );
             }
-            const tweet: DocumentTweet = await this._tweetsService.findTweetById(new Types.ObjectId(id));
+            const tweet: DocumentTweet = await this._tweetsService.findById(
+                new Types.ObjectId(id),
+                principal
+            );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
         } catch (error) {
             return this._fail(
@@ -636,6 +657,7 @@ export class TweetsController extends ControllerBase {
     @ApiOperationGet({
         description: 'Find retweets by tweet id',
         summary: 'Find retweets by tweet id',
+        path: '/retweets/{id}',
         parameters: {
             path: {
                 id: {
@@ -651,17 +673,17 @@ export class TweetsController extends ControllerBase {
             200: {
                 description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'Error'
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'Error'
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'Error'
             }
         },
         security: {
@@ -701,6 +723,7 @@ export class TweetsController extends ControllerBase {
     @ApiOperationGet({
         description: 'Find users by tweet likes',
         summary: 'Find users by tweet likes',
+        path: '/likes/{id}',
         parameters: {
             path: {
                 id: {
