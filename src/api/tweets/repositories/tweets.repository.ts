@@ -8,7 +8,7 @@ import { RepositoryBase } from '../../base/repository.base';
 import { HttpError } from '../../../shared/models/http.error';
 import { NOT_FOUND } from 'http-status-codes';
 import { Principal } from '../../auth/models/principal.model';
-import { DocumentUser, User } from '../../users/models/user.model';
+import { DocumentUser } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
 
 @injectable()
@@ -69,7 +69,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
 
     public async findLikesUsersByTweetId(tweetId: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
         const tweet: DocumentTweet = await this._repository.findById(tweetId);
-        if(!tweet) {
+        if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found')
         }
         return this._usersService.findByLikes(tweet.likes as Types.ObjectId[], principal, skip, limit)

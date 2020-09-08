@@ -3,7 +3,6 @@ import { CreateQuery, Types, UpdateQuery } from 'mongoose';
 
 import { TweetsRepository } from '../repositories/tweets.repository';
 import { DocumentTweet, Tweet } from '../models/tweet.model';
-import { UsersRepository } from '../../users/repositories/users.repository';
 import { Principal } from '../../auth/models/principal.model';
 import { DocumentUser } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
