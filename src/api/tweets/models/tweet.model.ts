@@ -40,7 +40,7 @@ export class Tweet extends Base {
         required: true,
         example: ['ObjectId']
     })
-    @prop({ ref: () => Tweet, required: false})
+    @prop({ ref: () => Tweet, required: false })
     public retweetedTweet: Ref<Tweet>;
 
     @ApiModelProperty({
@@ -59,9 +59,45 @@ export class Tweet extends Base {
     @prop({ required: false, default: Date.now() })
     public lastEdited: number;
 
+    @ApiModelProperty({
+        description: 'Comments count',
+        required: false,
+        example: [23],
+    })
+    public commentsCount?: number
+
+    @ApiModelProperty({
+        description: 'Likes count',
+        required: false,
+        example: [23],
+    })
+    public likesCount?: number;
+
+    @ApiModelProperty({
+        description: 'Is tweet liked by current user',
+        required: false,
+        example: [true],
+    })
+    public liked?: boolean
+
+    @ApiModelProperty({
+        description: 'Retweets count',
+        required: false,
+        example: [23],
+    })
+    public retweetsCount?: number
+
+    @ApiModelProperty({
+        description: 'Is tweet retweeted by current user',
+        required: false,
+        example: [false],
+    })
+    public retweeted?: boolean
+
     constructor(tweet: CreateQuery<Tweet>) {
         super();
         Object.assign(this, tweet);
     }
 }
+
 export type DocumentTweet = DocumentType<Tweet>;
