@@ -15,7 +15,8 @@ export abstract class ControllerBase extends BaseHttpController {
 
     protected _fail(res: Response, httpError: HttpError) {
         return res.status(httpError.code).json({
-            status: 'fail',
+            status: 'failed',
+            code: httpError.code,
             message: httpError.message
         });
     }

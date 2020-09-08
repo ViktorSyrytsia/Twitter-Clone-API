@@ -742,14 +742,14 @@ export class TweetsController extends ControllerBase {
                 model: 'Tweet',
             },
             400: {
-                description: 'Fail/ Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             },
             401: {
-                description: 'Fail / unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
+                model: 'HttpError',
             }
         },
         security: {
