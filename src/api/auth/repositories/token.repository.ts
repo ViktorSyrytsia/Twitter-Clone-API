@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { ReturnModelType } from '@typegoose/typegoose';
-import { CreateQuery } from 'mongoose';
+import { CreateQuery, Types } from 'mongoose';
 
 import { DatabaseConnection } from '../../../database/database-connection';
 import { DocumentToken, Token } from '../models/token.model';
@@ -19,9 +19,9 @@ export class TokenRepository extends RepositoryBase<Token> {
     public async findByBodyAndType(
         body: string,
         type: TokenType
-    ): Promise<DocumentToken[]> {
-        return this._repository.find({
-            $and: [{ tokeBody: body }, { tokenType: type }],
+    ): Promise<DocumentToken> {
+        return this._repository.findOne({
+            $and: [{ tokenBody: body }, { tokenType: type }],
         });
     }
 
@@ -31,7 +31,7 @@ export class TokenRepository extends RepositoryBase<Token> {
         return this._repository.create(token);
     }
 
-    public async deleteToken(tokenId: string): Promise<DocumentToken> {
+    public async deleteToken(tokenId: Types.ObjectId): Promise<DocumentToken> {
         return this._repository.findByIdAndDelete(tokenId);
     }
 }

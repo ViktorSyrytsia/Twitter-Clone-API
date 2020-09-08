@@ -24,7 +24,7 @@ export class Token extends Base {
         example: ['550e8400-e29b-41d4-a716-446655440000'],
     })
     @prop({ required: true })
-    public tokeBody: String;
+    public tokenBody: string;
 
     @ApiModelProperty({
         description:
@@ -53,7 +53,7 @@ export class Token extends Base {
     private lifetime: number;
 
     public get isExpired(): boolean {
-        return Date.now() - this.createdAt < this.lifetime;
+        return Date.now() - this.createdAt > this.lifetime;
     }
 
     constructor(token: CreateQuery<Token>) {
