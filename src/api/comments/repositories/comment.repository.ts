@@ -1,13 +1,8 @@
 import {injectable} from 'inversify';
 import {ReturnModelType} from '@typegoose/typegoose';
-<<<<<<< HEAD
-=======
-import {CreateQuery, Types} from 'mongoose';
->>>>>>> bb86105... fix issues
-
 import {CreateQuery, DocumentQuery, Types} from 'mongoose';
 import {DatabaseConnection} from '../../../database/database-connection';
-import {DocumentComment, Comment, Like} from '../models/comment.model';
+import {DocumentComment, Comment} from '../models/comment.model';
 import {RepositoryBase} from '../../base/repository.base';
 
 const LIKES_LIMIT = 10;
