@@ -63,7 +63,8 @@ export class TweetsService {
 
     public async findTweetsByFollowing(principal: Principal, skip: number, limit: number): Promise<DocumentTweet[]> {
         try {
-            const authorsIds: Types.ObjectId[] = await this._usersService.getFollowingUsersIdsByUserId(principal.details._id);
+            const authorsIds: Types.ObjectId[] = (await this._usersService.getFollowingUsersByUserId(principal.details._id))
+                .map((user: DocumentUser) => user._id);
             return this._tweetsRepository.findTweetsByAuthorsIds(authorsIds, principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);

@@ -102,10 +102,8 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._repository.findByIdAndDelete(userId);
     }
 
-    public async getFollowingUsersIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
-        return this._repository.find(userId).map((user: DocumentUser[]) => {
-            return user[0].followers.map((_user: DocumentUser) => _user._id);
-        });
+    public async getFollowingUsersByUserId(userId: Types.ObjectId): Promise<DocumentUser[]> {
+        return this._repository.find({ followers: { $elemMatch: { $eq: userId } } })
     }
 
     public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {

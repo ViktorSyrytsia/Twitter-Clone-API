@@ -40,8 +40,8 @@ export class UsersService {
         return this._usersRepository.findByLikes(userIds, principal, skip, limit);
     }
 
-    public async getFollowingUsersIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
-        return this._usersRepository.getFollowingUsersIdsByUserId(userId);
+    public async getFollowingUsersByUserId(userId: Types.ObjectId): Promise<DocumentUser[]> {
+        return this._usersRepository.getFollowingUsersByUserId(userId);
     }
 
     public async deleteUserById(userId: Types.ObjectId): Promise<DocumentUser> {
