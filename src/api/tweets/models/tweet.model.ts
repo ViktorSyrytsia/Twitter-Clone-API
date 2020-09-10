@@ -17,15 +17,15 @@ export class Tweet extends Base {
         example: ['5f423af74c9234267e6aa6ea'],
     })
     @prop({ ref: () => User, required: true })
-    public authorId: Ref<User>;
+    public authorId?: Ref<User>;
 
     @ApiModelProperty({
         description: 'Text',
         required: true,
         example: ['Some text'],
     })
-    @prop({ required: true })
-    public text: string;
+    @prop({ required: false })
+    public text?: string;
 
     @ApiModelProperty({
         description: 'Likes',
@@ -33,7 +33,7 @@ export class Tweet extends Base {
         example: [['ObjectId1', 'ObjectId2']],
     })
     @prop({ ref: () => User, required: false, default: [] })
-    public likes: Ref<User>[]
+    public likes?: Ref<User>[];
 
     @ApiModelProperty({
         description: 'Retweets',
@@ -41,7 +41,7 @@ export class Tweet extends Base {
         example: ['ObjectId']
     })
     @prop({ ref: () => Tweet, required: false, default: null })
-    public retweetedTweet: Ref<Tweet>;
+    public retweetedTweet?: Ref<Tweet>;
 
     @ApiModelProperty({
         description: 'Tweet timestamp of created',
@@ -49,7 +49,7 @@ export class Tweet extends Base {
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
-    public createdAt: number;
+    public createdAt?: number;
 
     @ApiModelProperty({
         description: 'Tweet timestamp of lastEdited',
@@ -57,14 +57,14 @@ export class Tweet extends Base {
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
-    public lastEdited: number;
+    public lastEdited?: number;
 
     @ApiModelProperty({
         description: 'Comments count',
         required: false,
         example: [23],
     })
-    public commentsCount?: number
+    public commentsCount?: number;
 
     @ApiModelProperty({
         description: 'Likes count',
@@ -78,21 +78,21 @@ export class Tweet extends Base {
         required: false,
         example: [true],
     })
-    public isLiked?: boolean
+    public isLiked?: boolean;
 
     @ApiModelProperty({
         description: 'Retweets count',
         required: false,
         example: [23],
     })
-    public retweetsCount?: number
+    public retweetsCount?: number;
 
     @ApiModelProperty({
         description: 'Is tweet retweeted by current user',
         required: false,
         example: [false],
     })
-    public isRetweeted?: boolean
+    public isRetweeted?: boolean;
 
     constructor(tweet: CreateQuery<Tweet>) {
         super();

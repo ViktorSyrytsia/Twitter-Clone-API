@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { BaseHttpController } from 'inversify-express-utils';
 
 import { HttpError } from '../../shared/models/http.error';
+import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
 
 @injectable()
 export abstract class ControllerBase extends BaseHttpController {

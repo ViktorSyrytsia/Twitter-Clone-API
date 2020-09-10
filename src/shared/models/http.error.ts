@@ -1,4 +1,5 @@
 import { ApiModel, ApiModelProperty } from 'swagger-express-typescript';
+import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
 
 @ApiModel({
     description: 'Model of HttpError',
@@ -29,6 +30,10 @@ export class HttpError extends Error {
 
     constructor(code: number, message: string) {
         super(message);
-        this.code = code;
+        if (!code) {
+            this.code = INTERNAL_SERVER_ERROR;
+        } else {
+            this.code = code;
+        }
     }
 }

@@ -15,7 +15,7 @@ export class AuthProvider implements interfaces.AuthProvider {
     ): Promise<interfaces.Principal> {
         const token: string = req.header('x-auth-token');
         if(!token) {
-            return new Principal(null)
+            return new Principal(null);
         }
         try {
             const user = await this._authService.getUserFromToken(token);
@@ -24,5 +24,4 @@ export class AuthProvider implements interfaces.AuthProvider {
             return new Principal(null);
         }
     }
-
 }

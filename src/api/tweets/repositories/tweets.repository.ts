@@ -28,8 +28,8 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
     public async updateTweet(tweet: UpdateQuery<Tweet>, principal: Principal): Promise<DocumentTweet> {
         const updatedTweet: DocumentTweet = await this._repository.findByIdAndUpdate(tweet._id, {
             $set: { ...tweet }
-        }, { new: true })
-        return this._addFields(updatedTweet, principal)
+        }, { new: true });
+        return this._addFields(updatedTweet, principal);
     }
 
     public async deleteTweet(id: Types.ObjectId): Promise<DocumentTweet> {
@@ -44,30 +44,29 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
     }
 
     public async findTweetsByAuthorsIds(authorsIds: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
-        let findTweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository
-            .find({ _id: { $in: authorsIds } })
+        const findTweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository
+            .find({ authorId: { $in: authorsIds } })
             .populate('retweetedTweet')
             .sort({ createdAt: -1 });
-
-        return this._addPaginationAndModify(findTweetsQuery, principal, skip, limit)
+        return this._addPaginationAndModify(findTweetsQuery, principal, skip, limit);
     }
 
     public async findRetweetsByTweetId(tweetId: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
-        let findRetweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository.find({ retweetedTweet: tweetId })
+        const findRetweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository.find({ retweetedTweet: tweetId })
             .populate('retweetedTweet')
             .sort({ createdAt: -1 });
-        return this._addPaginationAndModify(findRetweetsQuery, principal, skip, limit)
+        return this._addPaginationAndModify(findRetweetsQuery, principal, skip, limit);
     }
 
     public async findLikesUsersByTweetId(likes: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
-        return this._usersService.findByLikes(likes as Types.ObjectId[], principal, skip, limit)
+        return this._usersService.findByLikes(likes as Types.ObjectId[], principal, skip, limit);
     }
 
     public async likeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
         return this._repository.update(
             { _id: tweetIdToLike },
             { $push: { likes: userId } }
-        )
+        );
     }
 
     public async unlikeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
@@ -88,14 +87,14 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
             findTweetsQuery = findTweetsQuery.skip(skip);
         }
         if (limit) {
-            findTweetsQuery = findTweetsQuery.limit(limit)
+            findTweetsQuery = findTweetsQuery.limit(limit);
         }
         return findTweetsQuery
             .map(async (tweets: DocumentTweet[]) => {
                 for (let i = 0; i < tweets.length; i++) {
-                    tweets[i] = await this._addFields(tweets[i], principal)
+                    tweets[i] = await this._addFields(tweets[i], principal);
                 }
-                return tweets
+                return tweets;
             })
             .populate({
                 path: 'likes',
@@ -104,17 +103,17 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
                     skip: 0,
                     limit: 5
                 }
-            })
+            });
     }
 
     private async _addFields(tweet: DocumentTweet, principal?: Principal): Promise<DocumentTweet> {
         tweet.likesCount = tweet.likes.length;
         tweet.isLiked = principal ? tweet.likes.includes(principal.details._id) : false;
-        tweet.retweetsCount = (await this._repository.find({ retweetedTweet: tweet._id })).length
+        tweet.retweetsCount = (await this._repository.find({ retweetedTweet: tweet._id })).length;
         tweet.isRetweeted = principal ? !!(await this._repository.findOne({
             retweetedTweet: tweet._id,
             authorId: principal.details._id
         })) : false;
-        return tweet
+        return tweet;
     }
 }
