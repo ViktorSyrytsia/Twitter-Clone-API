@@ -79,12 +79,26 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Comment'
             },
-            404: {description: 'Fail / tweet not found'},
-            500: {description: 'Fail / cannot find comments'},
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Fail / tweet not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot find comments',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
         }
     })
     @httpGet('/:tweetId')
     public async getCommentsByTweet(
+        @principal() principal: Principal,
         @requestParam('tweetId') tweetId: string,
         @queryParam('skip') skip: string,
         @queryParam('limit') limit: string,
@@ -99,8 +113,9 @@ export class CommentController extends ControllerBase {
         }
         try {
             const comments: Object[] =
-                await this._commentService.findCommentByTweet(
+                await this._commentService.findCommentsByTweet(
                     new Types.ObjectId(tweetId),
+                    principal,
                     Number.parseInt(skip),
                     Number.parseInt(limit)
                 );
@@ -118,11 +133,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationGet({
         description: 'Get replied comments',
         summary: 'Get replied comment by comment id with pagination',
-        path: '/{commentId}',
+        path: '/{id}',
         parameters: {
             path: {
                 commentId: {
-                    name: 'commentId',
+                    name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment',
                     required: true,
@@ -152,13 +167,21 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Comment'
             },
-            404: {description: 'Fail / comment not found'},
-            500: {description: 'Fail / cannot find comments'},
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot find comments',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
         }
     })
-    @httpGet('/:commentId')
+    @httpGet('/:id')
     public async getRepliedCommentsByCommentId(
-        @requestParam('commentId') commentId: string,
+        @requestParam('id') commentId: string,
         @queryParam('skip') skip: string,
         @queryParam('limit') limit: string,
         @request() req: Request,
@@ -167,7 +190,7 @@ export class CommentController extends ControllerBase {
         if (!commentId) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'CommentId id is missing')
+                new HttpError(BAD_REQUEST, 'id is missing')
             );
         }
         try {
@@ -201,14 +224,6 @@ export class CommentController extends ControllerBase {
                     required: true
                 }
             },
-            query: {
-                repliedCommentId: {
-                    name: 'repliedCommentId',
-                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
-                    description: 'id of replied comment',
-                    required: false,
-                }
-            },
             body: {
                 name: 'text',
                 type: SwaggerDefinitionConstant.Parameter.Type.STRING,
@@ -222,16 +237,27 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
-            404: {description: 'Fail / tweet not found'},
-            422: {description: 'Fail / text not a string'},
-            500: {description: 'Fail / cannot create comment',},
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Fail / tweet not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot create comments',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
         }
     })
     @httpPost('/:tweetId')
     public async createComment(
         @principal() principal: Principal,
         @requestParam('tweetId') tweetId: string,
-        @queryParam('repliedCommentId') repliedCommentId: string,
         @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
@@ -246,8 +272,7 @@ export class CommentController extends ControllerBase {
             const createdComment: DocumentComment =
                 await this._commentService.createComment(text,
                     principal,
-                    new Types.ObjectId(tweetId),
-                    new Types.ObjectId(repliedCommentId));
+                    new Types.ObjectId(tweetId));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: createdComment
@@ -262,11 +287,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationPut({
         description: 'Update comment',
         summary: 'Update comment with new text',
-        path: '/{commentId}',
+        path: '/{id}',
         parameters: {
             path: {
-                commentId: {
-                    name: 'commentId',
+                id: {
+                    name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment to update',
                     required: true,
@@ -287,21 +312,37 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
-            403: {description: 'Fail / not comment author'},
-            404: {description: 'Fail / comment not found'},
-            422: {description: 'Fail / text not a string'},
-            500: {description: 'Fail / cannot update comment',},
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Fail / not comment author',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Fail / comment not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot update comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
         }
     })
-    @httpPut('/:commentId')
+    @httpPut('/:id')
     public async updateComment(
         @principal() principal: Principal,
-        @requestParam('commentId') commentId: string,
+        @requestParam('id') id: string,
         @requestBody() text: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
-        if (!commentId) {
+        if (!id) {
             return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -310,7 +351,7 @@ export class CommentController extends ControllerBase {
         try {
             const updatedComment: DocumentComment =
                 await this._commentService.updateComment(
-                    new Types.ObjectId(commentId),
+                    new Types.ObjectId(id),
                     text,
                     principal);
 
@@ -327,11 +368,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationDelete({
         description: 'delete comment',
         summary: 'delete comment by id',
-        path: '/{commentId}',
+        path: '/{id}',
         parameters: {
             path: {
-                commentId: {
-                    name: 'commentId',
+                id: {
+                    name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment to update',
                     required: true,
@@ -341,23 +382,40 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns removed comment',
+                description: 'Success / returns updated comment comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
-            403: {description: 'Fail / not owner of comment'},
-            404: {description: 'Fail / comment not found'},
-            500: {description: 'Fail / cannot remove comment',},
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Fail / not comment author',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Fail / comment not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot update comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
         }
     })
-    @httpDelete('/:commentId')
+    @httpDelete('/:id')
     public async deleteComment(
         @principal() principal: Principal,
-        @requestParam('commentId') commentId: string,
+        @requestParam('id') id: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
-        if (!commentId) {
+        if (!id) {
             return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -365,7 +423,7 @@ export class CommentController extends ControllerBase {
         }
         try {
             const deletedComment: DocumentComment =
-                await this._commentService.deleteComment(principal, new Types.ObjectId(commentId));
+                await this._commentService.deleteComment(principal, new Types.ObjectId(id));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: deletedComment
@@ -381,11 +439,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Like comment',
         summary: 'Like comment',
-        path: '/like/{commentId}',
+        path: '/like/{id}',
         parameters: {
             path: {
-                commentId: {
-                    name: 'commentId',
+                id: {
+                    name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment',
                     required: true,
@@ -399,17 +457,29 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
-            500: {description: 'Fail / cannot like comment',},
+
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+
+            500: {
+                description: 'Fail / cannot update comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
         }
     })
-    @httpPatch('/like/:commentId')
+    @httpPatch('/like/:id')
     public async likeComment(
-        @requestParam('commentId') commentId: string,
+        @principal() principal: Principal,
+        @requestParam('id') id: string,
         @requestParam() userId: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
-        if (!commentId) {
+        if (!id) {
             return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -425,7 +495,8 @@ export class CommentController extends ControllerBase {
 
             const likedComment: DocumentComment =
                 await this._commentService.likeComment(
-                    new Types.ObjectId(commentId),
+                    principal,
+                    new Types.ObjectId(id),
                     new Types.ObjectId(userId)
                 );
 
@@ -443,11 +514,11 @@ export class CommentController extends ControllerBase {
     @ApiOperationPatch({
         description: 'Unlike comment',
         summary: 'Unlike comment by id',
-        path: '/unlike/{commentId}',
+        path: '/unlike/{id}',
         parameters: {
             path: {
-                commentId: {
-                    name: 'commentId',
+                id: {
+                    name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
                     description: 'id of comment',
                     required: true,
@@ -457,21 +528,33 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns unliked comment',
+                description: 'Success / returns liked comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Comment'
+                model: 'Comment',
             },
-            500: {description: 'Fail / cannot unlike comment',},
+
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+
+            500: {
+                description: 'Fail / cannot update comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
         }
     })
-    @httpPatch('/unlike/:commentId')
+    @httpPatch('/unlike/:id')
     public async unlikeComment(
-        @requestParam('commentId') commentId: string,
+        @principal() principal: Principal,
+        @requestParam('id') id: string,
         @requestParam('likeId') likeId: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
-        if (!commentId) {
+        if (!id) {
             return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
@@ -486,7 +569,8 @@ export class CommentController extends ControllerBase {
         try {
             const unlikedComment: DocumentComment =
                 await this._commentService.unlikeComment(
-                    new Types.ObjectId(commentId),
+                    principal,
+                    new Types.ObjectId(id),
                     new Types.ObjectId(likeId)
                 );
 
@@ -499,5 +583,96 @@ export class CommentController extends ControllerBase {
             );
         }
     }
+
+    @ApiOperationPatch({
+        description: 'Reply to comment',
+        summary: 'Reply to comment by id',
+        path: '/reply/{id}',
+        parameters: {
+            path: {
+                id: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+            query: {
+                replyCommentId: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'id of comment to reply',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            }
+        },
+        responses: {
+            200: {
+                description: 'Success / returns liked comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Comment',
+            },
+            400: {
+                description: 'Fail / Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Fail / not comment author',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError'
+            },
+            404: {
+                description: 'Fail / Comment not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Fail / cannot update comment',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
+        }
+    })
+    @httpPatch('/reply/:id')
+    public async replyComment(
+        @principal() principal: Principal,
+        @requestParam('id') id: string,
+        @queryParam('replyCommentId') replyCommentId: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
+        if (!replyCommentId) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Like id is missing')
+            );
+        }
+        try {
+            const comment: DocumentComment =
+                await this._commentService.replyComment(
+                    principal,
+                    new Types.ObjectId(id),
+                    new Types.ObjectId(replyCommentId)
+                );
+
+            return this._success<{ comment: DocumentComment }>(res, OK, {
+                comment: comment
+            });
+        } catch (error) {
+            return this._fail(
+                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
+            );
+        }
+    }
+
 }
 

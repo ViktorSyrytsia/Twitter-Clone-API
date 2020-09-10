@@ -1,8 +1,8 @@
 import {injectable} from 'inversify';
 import {ReturnModelType} from '@typegoose/typegoose';
-import {CreateQuery, DocumentQuery, Types} from 'mongoose';
+import {CreateQuery, Types} from 'mongoose';
 import {DatabaseConnection} from '../../../database/database-connection';
-import {DocumentComment, Comment} from '../models/comment.model';
+import {Comment, DocumentComment} from '../models/comment.model';
 import {RepositoryBase} from '../../base/repository.base';
 
 const LIKES_LIMIT = 10;
@@ -48,6 +48,10 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}}, {new: true});
     }
 
+    public async replyComment(id: Types.ObjectId, repliedCommentId: Types.ObjectId) {
+        return this._repository.findByIdAndUpdate(id, {replyToComment: repliedCommentId});
+    }
+
     private async findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
         const comments = await this._repository.find({replyToComment: commentId});
         return comments.length;
@@ -85,5 +89,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
 
         return await Promise.all(commentsQuery[0]);
     }
+
+
 }
 
