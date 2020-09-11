@@ -1,4 +1,5 @@
 import {Container} from 'inversify';
+
 import {App} from './app';
 import {UsersModule} from './api/users/users.module';
 import {DatabaseModule} from './database/database.module';
