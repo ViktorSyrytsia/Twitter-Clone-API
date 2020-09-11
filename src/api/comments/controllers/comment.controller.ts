@@ -61,17 +61,17 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns users',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -143,22 +143,22 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns array of comments',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Comment'
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot find comments',
+                description: 'Cannot find comments',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -231,17 +231,17 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns array of comments',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Comment'
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot find comments',
+                description: 'Cannot find comments',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -309,22 +309,22 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             201: {
-                description: 'Success / returns created comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot create comments',
+                description: 'Cannot create comments',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -389,27 +389,27 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns updated comment comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             403: {
-                description: 'Fail / not comment author',
+                description: 'Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / comment not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot update comment',
+                description: 'Cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -426,7 +426,7 @@ export class CommentController extends ControllerBase {
         if (!id) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         try {
@@ -463,27 +463,27 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns updated comment comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment'
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             403: {
-                description: 'Fail / not comment author',
+                description: 'Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / comment not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot update comment',
+                description: 'Cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -499,7 +499,7 @@ export class CommentController extends ControllerBase {
         if (!id) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         try {
@@ -519,7 +519,7 @@ export class CommentController extends ControllerBase {
 
     @ApiOperationPatch({
         description: 'Like comment',
-        summary: 'Like comment',
+        summary: 'Like comment by id',
         path: 'like/{id}',
         parameters: {
             path: {
@@ -534,28 +534,28 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns liked comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
 
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             403: {
-                description: 'Fail / not comment author',
+                description: 'Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / comment not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot update comment',
+                description: 'Cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             }
@@ -572,7 +572,7 @@ export class CommentController extends ControllerBase {
         if (!id) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         if (!userId) {
@@ -618,27 +618,27 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns liked comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             403: {
-                description: 'Fail / not comment author',
+                description: 'Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'Fail / comment not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot update comment',
+                description: 'Cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             }
@@ -655,7 +655,7 @@ export class CommentController extends ControllerBase {
         if (!id) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         if (!likeId) {
@@ -708,27 +708,27 @@ export class CommentController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Success / returns liked comment',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Comment',
             },
             400: {
-                description: 'Fail / Parameters fail',
+                description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             403: {
-                description: 'Fail / not comment author',
+                description: 'Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError'
             },
             404: {
-                description: 'Fail / Comment not found',
+                description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             500: {
-                description: 'Fail / cannot update comment',
+                description: 'Cannot update comment',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             }
@@ -745,7 +745,7 @@ export class CommentController extends ControllerBase {
         if (!id) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         if (!replyCommentId) {
@@ -771,6 +771,5 @@ export class CommentController extends ControllerBase {
             );
         }
     }
-
 }
 
