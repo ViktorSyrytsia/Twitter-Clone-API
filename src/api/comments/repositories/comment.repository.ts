@@ -1,10 +1,10 @@
-import {injectable} from 'inversify';
-import {ReturnModelType} from '@typegoose/typegoose';
-import {CreateQuery, DocumentQuery, Types} from 'mongoose';
-import {DatabaseConnection} from '../../../database/database-connection';
-import {Comment, DocumentComment} from '../models/comment.model';
-import {RepositoryBase} from '../../base/repository.base';
-import {Principal} from '../../auth/models/principal.model';
+import { injectable } from 'inversify';
+import { ReturnModelType } from '@typegoose/typegoose';
+import { CreateQuery, DocumentQuery, Types } from 'mongoose';
+import { DatabaseConnection } from '../../../database/database-connection';
+import { Comment, DocumentComment } from '../models/comment.model';
+import { RepositoryBase } from '../../base/repository.base';
+import { Principal } from '../../auth/models/principal.model';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {
@@ -19,38 +19,48 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findById(commentId);
     }
 
-    public async findByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<Object[]> {
-        const comments = this._repository.find({tweetId});
-        return this._addPaginationAndModify(comments, principal, skip, limit);
+    public async findByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentComment[]> {
+        const findCommentsQuery: DocumentQuery<DocumentComment[], DocumentComment> = this._repository.find({ tweetId });
+        return this._addPaginationAndModify(findCommentsQuery, principal, skip, limit);
     }
 
     async findRepliedCommentsByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
-        const comments = this._repository.find({replyToComment: commentId});
+        const comments = this._repository.find({ repliedComment: commentId });
         return this._addPaginationAndModify(comments, principal, skip, limit);
     }
 
-    public async createComment(comment: CreateQuery<Comment>): Promise<DocumentComment> {
-        return this._repository.create(comment);
+    public async createComment(comment: CreateQuery<Comment>, principal: Principal): Promise<DocumentComment> {
+        return this._addFields(
+            await this._repository.create(comment),
+            principal
+        );
     }
 
-    public async updateComment(commentId: Types.ObjectId, data: object): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, data, {new: true});
+    public async updateComment(commentId: Types.ObjectId, text: string, principal: Principal): Promise<DocumentComment> {
+        return this._addFields(
+            await this._repository.findByIdAndUpdate(commentId, {
+                $set: {
+                    text,
+                    lastEdited: Date.now()
+                }
+            }, { new: true }),
+            principal
+        );
     }
 
-    public async deleteComment(commentId: Types.ObjectId): Promise<DocumentComment> {
-        return this._repository.findByIdAndDelete(commentId);
+    public async deleteComment(commentId: Types.ObjectId, principal: Principal): Promise<DocumentComment> {
+        return this._addFields(
+            await this._repository.findByIdAndDelete(commentId),
+            principal
+        );
     }
 
     public async likeComment(commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, {$push: {likes: userId}}, {new: true});
+        return this._repository.findByIdAndUpdate(commentId, { $push: { likes: userId } }, { new: true });
     }
 
     public async unlikeComment(commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        return this._repository.findByIdAndUpdate(commentId, {$pull: {likes: userId}}, {new: true});
-    }
-
-    public async replyComment(id: Types.ObjectId, repliedCommentId: Types.ObjectId) {
-        return this._repository.findByIdAndUpdate(id, {replyToComment: repliedCommentId});
+        return this._repository.findByIdAndUpdate(commentId, { $pull: { likes: userId } }, { new: true });
     }
 
     private async _addPaginationAndModify(
@@ -58,7 +68,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         principal: Principal,
         skip?: number,
         limit?: number
-    ): Promise<Object[]> {
+    ): Promise<DocumentComment[]> {
         if (skip) {
             findCommentQuery = findCommentQuery.skip(skip);
         }
@@ -77,7 +87,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
                 select: '_id username firstName lastName avatar',
                 options: {
                     skip: 0,
-                    limit: 10
+                    limit: 5
                 }
             });
     }
@@ -86,11 +96,15 @@ export class CommentRepository extends RepositoryBase<Comment> {
         comment.likesCount = comment.likes.length;
         comment.isLiked = principal ? comment.likes.includes(principal.details._id) : false;
         comment.repliesCount = await this._findNumberOfReplies(comment._id);
+
+        const findCommentQuery: DocumentQuery<DocumentComment[], DocumentComment> = this._repository
+            .find({ repliedComment: comment._id })
+        comment.replies = await this._addPaginationAndModify(findCommentQuery, principal, 0, 5);
         return comment;
     }
 
     private async _findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
-        const comments = await this._repository.find({replyToComment: commentId});
+        const comments = await this._repository.find({ repliedComment: commentId });
         return comments.length;
     }
 }

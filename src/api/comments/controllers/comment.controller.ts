@@ -1,42 +1,27 @@
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import {
-    controller,
-    httpDelete,
-    httpGet,
-    httpPatch,
-    httpPost,
-    httpPut,
-    principal,
-    queryParam,
-    request,
-    requestBody,
-    requestParam,
-    response,
+    controller, httpDelete, httpGet, httpPatch, httpPost, httpPut, principal, queryParam, request, requestBody,
+    requestParam, response,
 } from 'inversify-express-utils';
-import {BAD_REQUEST, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import {
-    ApiOperationDelete,
-    ApiOperationGet,
-    ApiOperationPatch,
-    ApiOperationPost,
-    ApiOperationPut,
-    ApiPath,
+    ApiOperationDelete, ApiOperationGet, ApiOperationPatch, ApiOperationPost, ApiOperationPut, ApiPath,
     SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
+import { Types } from 'mongoose';
 
-import {ControllerBase} from '../../base/controller.base';
-import {CommentService} from '../services/comment.service';
-import {Comment, DocumentComment} from '../models/comment.model';
-import {HttpError} from '../../../shared/models/http.error';
-import {Types} from 'mongoose';
-import {Principal} from '../../auth/models/principal.model';
-import {AuthMiddleware} from '../../auth/middlewares/auth.middleware';
-import {DocumentUser} from '../../users/models/user.model';
+import { ControllerBase } from '../../base/controller.base';
+import { CommentService } from '../services/comment.service';
+import { Comment, DocumentComment } from '../models/comment.model';
+import { HttpError } from '../../../shared/models/http.error';
+import { Principal } from '../../auth/models/principal.model';
+import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
+import { DocumentUser } from '../../users/models/user.model';
 
 @ApiPath({
     path: '/api/v1/comments/',
     name: 'Comments',
-    security: {apiKeyHeader: []},
+    security: { apiKeyHeader: [] },
 })
 @controller('/comments')
 export class CommentController extends ControllerBase {
@@ -105,7 +90,7 @@ export class CommentController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -180,7 +165,7 @@ export class CommentController extends ControllerBase {
             );
         }
         try {
-            const comments: Object[] =
+            const comments: DocumentComment[] =
                 await this._commentService.findCommentsByTweet(
                     new Types.ObjectId(tweetId),
                     principal,
@@ -188,13 +173,11 @@ export class CommentController extends ControllerBase {
                     Number.parseInt(limit)
                 );
 
-            return this._success<{ comments: Object[] }>(res, OK, {
+            return this._success<{ comments: DocumentComment[] }>(res, OK, {
                 comments
             });
         } catch (error) {
-            return this._fail(
-                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
-            );
+            return this._fail(res, error);
         }
     }
 
@@ -259,7 +242,7 @@ export class CommentController extends ControllerBase {
         if (!commentId) {
             return this._fail(
                 res,
-                new HttpError(BAD_REQUEST, 'id is missing')
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
         try {
@@ -297,9 +280,9 @@ export class CommentController extends ControllerBase {
             body: {
                 description: 'Comment text',
                 required: true,
-                properties:{
+                properties: {
                     text: {
-                        name:'text',
+                        name: 'text',
                         required: true,
                         allowEmptyValue: false,
                         type: SwaggerDefinitionConstant.Parameter.Type.STRING
@@ -377,9 +360,9 @@ export class CommentController extends ControllerBase {
             body: {
                 description: 'Comment text',
                 required: true,
-                properties:{
+                properties: {
                     text: {
-                        name:'text',
+                        name: 'text',
                         required: true,
                         allowEmptyValue: false,
                         type: SwaggerDefinitionConstant.Parameter.Type.STRING
@@ -434,7 +417,8 @@ export class CommentController extends ControllerBase {
                 await this._commentService.updateComment(
                     new Types.ObjectId(id),
                     text,
-                    principal);
+                    principal
+                );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: updatedComment
@@ -455,7 +439,7 @@ export class CommentController extends ControllerBase {
                 id: {
                     name: 'id',
                     type: SwaggerDefinitionConstant.Parameter.Type.STRING,
-                    description: 'id of comment to update',
+                    description: 'id of comment to delete',
                     required: true,
                     allowEmptyValue: false
                 }
@@ -503,16 +487,14 @@ export class CommentController extends ControllerBase {
             );
         }
         try {
-            const deletedComment: DocumentComment =
-                await this._commentService.deleteComment(principal, new Types.ObjectId(id));
+            const deletedComment: DocumentComment = await this._commentService
+                .deleteComment(principal, new Types.ObjectId(id));
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: deletedComment
             });
         } catch (error) {
-            return this._fail(
-                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
-            );
+            return this._fail(res, error);
         }
     }
 
@@ -561,11 +543,10 @@ export class CommentController extends ControllerBase {
             }
         }
     })
-    @httpPatch('/like/:id')
+    @httpPatch('/like/:id', AuthMiddleware)
     public async likeComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
-        @requestParam() userId: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -575,19 +556,12 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
-        if (!userId) {
-            return this._fail(
-                res,
-                new HttpError(BAD_REQUEST, 'User id is missing')
-            );
-        }
         try {
 
             const likedComment: DocumentComment =
                 await this._commentService.likeComment(
                     principal,
-                    new Types.ObjectId(id),
-                    new Types.ObjectId(userId)
+                    new Types.ObjectId(id)
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
@@ -642,13 +616,15 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             }
+        },
+        security: {
+            // ...
         }
     })
-    @httpPatch('/unlike/:id')
+    @httpPatch('/unlike/:id', AuthMiddleware)
     public async unlikeComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
-        @requestParam('likeId') likeId: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -658,27 +634,18 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
-        if (!likeId) {
-            return this._fail(
-                res,
-                new HttpError(BAD_REQUEST, 'Like id is missing')
-            );
-        }
         try {
             const unlikedComment: DocumentComment =
                 await this._commentService.unlikeComment(
                     principal,
-                    new Types.ObjectId(id),
-                    new Types.ObjectId(likeId)
+                    new Types.ObjectId(id)
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: unlikedComment
             });
         } catch (error) {
-            return this._fail(
-                res, new HttpError(error.code || INTERNAL_SERVER_ERROR, error.message)
-            );
+            return this._fail(res, error);
         }
     }
 
@@ -696,13 +663,16 @@ export class CommentController extends ControllerBase {
                     allowEmptyValue: false
                 }
             },
-            query: {
-                replyCommentId: {
-                    name: 'id',
-                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
-                    description: 'id of comment to reply',
-                    required: true,
-                    allowEmptyValue: false
+            body: {
+                required: true,
+                allowEmptyValue: false,
+                properties: {
+                    text: {
+                        name: 'text',
+                        required: true,
+                        allowEmptyValue: false,
+                        type: SwaggerDefinitionConstant.Parameter.Type.STRING
+                    }
                 }
             }
         },
@@ -734,11 +704,11 @@ export class CommentController extends ControllerBase {
             }
         }
     })
-    @httpPatch('/reply/:id')
+    @httpPost('/reply/:id', AuthMiddleware)
     public async replyComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
-        @queryParam('replyCommentId') replyCommentId: string,
+        @requestBody() body: { text: string },
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -748,18 +718,12 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
-        if (!replyCommentId) {
-            return this._fail(
-                res,
-                new HttpError(BAD_REQUEST, 'Like id is missing')
-            );
-        }
         try {
             const comment: DocumentComment =
                 await this._commentService.replyComment(
+                    body.text,
                     principal,
                     new Types.ObjectId(id),
-                    new Types.ObjectId(replyCommentId)
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {

@@ -21,7 +21,7 @@ export class CommentService {
         return this._commentRepository.findById(id);
     }
 
-    public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<Object[]> {
+    public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentComment[]> {
         const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
 
         if (!tweet) {
@@ -50,21 +50,17 @@ export class CommentService {
             throw new HttpError(NOT_FOUND, 'tweet not found');
         }
 
-        const comment = new Comment({
-            authorId: principal.details._id,
-            tweetId: tweetId,
-            replyToComment: null,
-            text,
-            likes: [],
-            createdAt: new Date().valueOf(),
-            lastEdited: new Date().valueOf()
-        });
-
-        return this._commentRepository.createComment(comment);
+        return this._commentRepository.createComment(
+            new Comment({
+                authorId: principal.details._id,
+                tweetId: tweetId,
+                text
+            }),
+            principal
+        );
     }
 
     public async updateComment(id: Types.ObjectId, text: string, principal: Principal): Promise<DocumentComment> {
-
         const comment: DocumentComment = await this._commentRepository.findById(id);
 
         if (!comment) {
@@ -75,11 +71,8 @@ export class CommentService {
             throw new HttpError(FORBIDDEN, 'not owner of comment');
         }
 
-        comment.text = text;
-        comment.lastEdited = new Date().valueOf();
-
         try {
-            return this._commentRepository.updateComment(comment._id, comment);
+            return this._commentRepository.updateComment(comment._id, text, principal);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -96,20 +89,22 @@ export class CommentService {
         }
 
         try {
-            return this._commentRepository.deleteComment(id);
+            return this._commentRepository.deleteComment(id, principal);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
-    public async likeComment(principal: Principal, commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        const comment: DocumentComment = await this._commentRepository.findById(commentId);
+    public async likeComment(principal: Principal, commentId: Types.ObjectId): Promise<DocumentComment> {
+        const comment: DocumentComment = await this._commentRepository.findById(commentId),
+            userId: Types.ObjectId = principal.details._id;
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
         }
-        if (comment.authorId !== principal.details._id) {
-            throw new HttpError(FORBIDDEN, 'not owner of comment');
+
+        if(comment.likes.includes(userId)) {
+            throw new HttpError(400, 'Already liked')
         }
 
         try {
@@ -119,14 +114,16 @@ export class CommentService {
         }
     }
 
-    public async unlikeComment(principal: Principal, commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        const comment: DocumentComment = await this._commentRepository.findById(commentId);
+    public async unlikeComment(principal: Principal, commentId: Types.ObjectId): Promise<DocumentComment> {
+        const comment: DocumentComment = await this._commentRepository.findById(commentId),
+            userId: Types.ObjectId = principal.details._id;
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
         }
-        if (comment.authorId !== principal.details._id) {
-            throw new HttpError(FORBIDDEN, 'not owner of comment');
+
+        if(!comment.likes.includes(userId)) {
+            throw new HttpError(400, 'Cannot unlike')
         }
 
         try {
@@ -137,18 +134,22 @@ export class CommentService {
     }
 
 
-    async replyComment(principal: Principal, commentId: Types.ObjectId, repliedCommentId: Types.ObjectId) {
-        const comment: DocumentComment = await this._commentRepository.findById(commentId);
+    async replyComment(text: string, principal: Principal, repliedCommentId: Types.ObjectId) {
+        const comment: DocumentComment = await this._commentRepository.findById(repliedCommentId);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
         }
-        if (comment.authorId !== principal.details._id) {
-            throw new HttpError(FORBIDDEN, 'not owner of comment');
-        }
 
         try {
-            return this._commentRepository.replyComment(commentId, repliedCommentId);
+            return this._commentRepository.createComment(
+                new Comment({
+                    text,
+                    authorId: principal.details._id,
+                    repliedComment: comment._id,
+                }),
+                principal
+            );
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
