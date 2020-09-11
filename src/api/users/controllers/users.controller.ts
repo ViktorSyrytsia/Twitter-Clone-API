@@ -112,7 +112,7 @@ export class UsersController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -159,15 +159,15 @@ export class UsersController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
 
     @ApiOperationGet({
-        path: '/:id',
         description: 'Get one user by id',
         summary: 'Get one user',
+        path: '/{id}',
         parameters: {
             path: {
                 id: {
@@ -222,7 +222,7 @@ export class UsersController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -275,7 +275,7 @@ export class UsersController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -321,7 +321,7 @@ export class UsersController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -329,7 +329,7 @@ export class UsersController extends ControllerBase {
     @ApiOperationPut({
         description: 'Follow user object',
         summary: 'Follow user',
-        path: '/follow/:id',
+        path: '/follow/{id}',
         parameters: {
             path: {
                 id: {
@@ -391,6 +391,7 @@ export class UsersController extends ControllerBase {
                 new Types.ObjectId(id)
             );
             return this._success<{ user: DocumentUser }>(res, OK, {user});
+
         } catch (error) {
             return this._fail(
                 res,
@@ -402,7 +403,7 @@ export class UsersController extends ControllerBase {
     @ApiOperationPut({
         description: 'Unfollow user object',
         summary: 'Unfollow user',
-        path: '/unfollow/:id',
+        path: '/unfollow/{id}',
         parameters: {
             path: {
                 id: {

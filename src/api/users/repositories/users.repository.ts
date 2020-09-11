@@ -21,12 +21,12 @@ export class UsersRepository extends RepositoryBase<User> {
     }
 
     public async findAll(skip: number, limit: number): Promise<DocumentUser[]> {
-        let usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find()
+        let usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find();
         if (skip) {
-            usersQuery = usersQuery.skip(skip)
+            usersQuery = usersQuery.skip(skip);
         }
         if (limit) {
-            usersQuery = usersQuery.limit(skip)
+            usersQuery = usersQuery.limit(skip);
         }
         return usersQuery;
     }
@@ -71,14 +71,14 @@ export class UsersRepository extends RepositoryBase<User> {
                     },
                 },
             ],
-        })
+        });
         if (skip) {
-            usersQuery = usersQuery.skip(skip)
+            usersQuery = usersQuery.skip(skip);
         }
         if (limit) {
-            usersQuery = usersQuery.limit(skip)
+            usersQuery = usersQuery.limit(skip);
         }
-        return usersQuery
+        return usersQuery;
     }
 
     public async createUser(user: CreateQuery<User>): Promise<DocumentUser> {
@@ -95,24 +95,22 @@ export class UsersRepository extends RepositoryBase<User> {
     public async activateUser(
         userId: Types.ObjectId
     ): Promise<DocumentUser> {
-        return this._repository.findByIdAndUpdate(userId, { $set: { active: true}}, { new: true });
+        return this._repository.findByIdAndUpdate(userId, { $set: { active: true } }, { new: true });
     }
 
     public async deleteUser(userId: Types.ObjectId): Promise<DocumentUser> {
         return this._repository.findByIdAndDelete(userId);
     }
 
-    public async getFollowingUsersIdsByUserId(userId: Types.ObjectId): Promise<Types.ObjectId[]> {
-        return this._repository.find({ followers: userId }).map((user: DocumentUser[]) => {
-            return user.map((_user: DocumentUser) => _user._id)
-        })
+    public async getFollowingUsersByUserId(userId: Types.ObjectId): Promise<DocumentUser[]> {
+        return this._repository.find({ followers: { $elemMatch: { $eq: userId } } })
     }
 
     public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
         return this._repository.update(
             { _id: userIdToFollow },
             { $push: { followers: userId } }
-        )
+        );
     }
 
     public async findByLikes(usersIds: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
@@ -123,18 +121,19 @@ export class UsersRepository extends RepositoryBase<User> {
             findUsersQuery = findUsersQuery.skip(skip);
         }
         if (limit) {
-            findUsersQuery = findUsersQuery.limit(limit)
+            findUsersQuery = findUsersQuery.limit(limit);
         }
         return findUsersQuery
             .select('_id username firstName lastName avatar followers')
-            .map(async (users: DocumentUser[]) => {
-                for (let i: number = 0; i< users.length; i++) {
-                    users[i].isFollower = principal ? principal.details.followers.includes(users[i]._id) : false;
-                    users[i].isFollowing = principal ? users[i].followers.includes(principal.details._id) : false;
-                    delete users[i].followers
-                }
+            .map((users: DocumentUser[]) => {
+                users.map((user: DocumentUser) => {
+                    user.isFollower = principal ? principal.details.followers.includes(user._id) : false;
+                    user.isFollowing = principal ? user.followers.includes(principal.details._id) : false;
+                    delete user.followers;
+                    return users
+                })
                 return users
-            })
+            });
     }
 
     public async unfollowUser(userId: Types.ObjectId, userIdToUnFollow: Types.ObjectId): Promise<DocumentUser> {

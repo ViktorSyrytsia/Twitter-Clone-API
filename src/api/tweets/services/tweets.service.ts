@@ -22,8 +22,9 @@ export class TweetsService {
     }
 
     public async updateTweet(tweet: UpdateQuery<Tweet>, principal: Principal): Promise<DocumentTweet> {
-        let tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweet._id, principal);
-        if (tweetToUpdate.authorId !== principal.details._id) {
+        const tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweet._id, principal);
+
+        if (tweetToUpdate.authorId.toLocaleString() !== principal.details._id.toHexString()) {
             throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
         }
         if (!tweetToUpdate) {
@@ -32,7 +33,7 @@ export class TweetsService {
         try {
             return this._tweetsRepository.updateTweet(tweet, principal);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
@@ -40,7 +41,7 @@ export class TweetsService {
         try {
             return this._tweetsRepository.deleteTweet(id);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
@@ -48,7 +49,7 @@ export class TweetsService {
         try {
             return this._tweetsRepository.findById(id, principal);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
@@ -56,52 +57,53 @@ export class TweetsService {
         try {
             return this._tweetsRepository.findTweetsByAuthorsIds([authorId], principal, skip, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async findTweetsByFollowing(principal: Principal, skip: number, limit: number): Promise<DocumentTweet[]> {
         try {
-            const authorsIds: Types.ObjectId[] = await this._usersService.getFollowingUsersIdsByUserId(principal.details._id)
-            return this._tweetsRepository.findTweetsByAuthorsIds(authorsIds, principal, skip, limit)
+            const authorsIds: Types.ObjectId[] = (await this._usersService.getFollowingUsersByUserId(principal.details._id))
+                .map((user: DocumentUser) => user._id);
+            return this._tweetsRepository.findTweetsByAuthorsIds(authorsIds, principal, skip, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async findRetweetsByTweetId(id: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
         try {
-            return this._tweetsRepository.findRetweetsByTweetId(id, principal, skip, limit)
+            return this._tweetsRepository.findRetweetsByTweetId(id, principal, skip, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async findLikesUsersByTweetId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
         const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
         if (!tweet) {
-            throw new HttpError(NOT_FOUND, 'Tweet not found')
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
         }
         try {
-            return this._tweetsRepository.findLikesUsersByTweetId(tweet.likes as Types.ObjectId[], principal, skip, limit)
+            return this._tweetsRepository.findLikesUsersByTweetId(tweet.likes as Types.ObjectId[], principal, skip, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async likeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
         try {
-            return this._tweetsRepository.likeTweet(userId, tweetIdToLike)
+            return this._tweetsRepository.likeTweet(userId, tweetIdToLike);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async unlikeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
         try {
-            return this._tweetsRepository.unlikeTweet(userId, tweetIdToLike)
+            return this._tweetsRepository.unlikeTweet(userId, tweetIdToLike);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 }

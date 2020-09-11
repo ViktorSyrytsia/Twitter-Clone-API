@@ -7,7 +7,7 @@ import {
     ApiOperationDelete, ApiOperationGet, ApiOperationPost, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
 import { Types } from 'mongoose';
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
+import { BAD_REQUEST, OK } from 'http-status-codes';
 
 import { ControllerBase } from '../../base/controller.base';
 import { TweetsService } from '../services/tweets.service';
@@ -38,20 +38,20 @@ export class TweetsController extends ControllerBase {
         parameters: {
             body: {
                 description: 'Post tweet',
-                required: true,
-                allowEmptyValue: false,
+                required: false,
+                allowEmptyValue: true,
                 properties: {
                     text: {
                         type: 'string',
-                        required: true,
-                        allowEmptyValue: false,
+                        required: false,
+                        allowEmptyValue: true,
                     }
                 }
             },
         },
         responses: {
             200: {
-                description: 'Returns tweet dto',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
@@ -72,21 +72,30 @@ export class TweetsController extends ControllerBase {
     })
     @httpPost('/', AuthMiddleware)
     public async createTweet(
-        @requestBody() tweet: Tweet,
+        @requestBody() body: { text: string },
         @request() req: Request,
         @response() res: Response,
         @principal() principal: Principal,
     ): Promise<Response> {
         try {
+            if (!body.text) {
+                this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet text is missing')
+                );
+            }
             const newTweet: DocumentTweet = await this._tweetsService.createTweet(
                 new Tweet({
-                    ...tweet,
+                    text: body.text,
                     authorId: principal.details._id
                 })
             );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: newTweet });
         } catch (error) {
-            return this._fail(res, error);
+            return this._fail(
+                res,
+                error
+            );
         }
     }
 
@@ -122,12 +131,12 @@ export class TweetsController extends ControllerBase {
                 model: 'HttpError',
             },
             401: {
-                description: 'unauthorized',
+                description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
             404: {
-                description: 'tweet not found',
+                description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -152,23 +161,39 @@ export class TweetsController extends ControllerBase {
             const tweet = await this._tweetsService.deleteTweet(new Types.ObjectId(id));
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
         } catch (error) {
-            return this._fail(res, error);
+            return this._fail(
+                res,
+                error
+            );
         }
     }
 
     @ApiOperationPut({
         description: 'Update tweet object',
         summary: 'Update tweet',
+        path: '/',
         parameters: {
             body: {
                 description: 'Update tweet',
-                required: true,
-                model: 'Tweet',
+                required: false,
+                allowEmptyValue: true,
+                properties: {
+                    _id: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false
+                    },
+                    text: {
+                        type: 'string',
+                        required: false,
+                        allowEmptyValue: true,
+                    }
+                }
             },
         },
         responses: {
             200: {
-                description: 'Returns tweet dto',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
@@ -194,19 +219,31 @@ export class TweetsController extends ControllerBase {
     })
     @httpPut('/', AuthMiddleware)
     public async updateTweet(
-        @requestBody() tweet: Tweet,
+        @requestBody() body: { text: string , _id: string },
         @principal() principal: Principal,
         @request() req: Request,
         @response() res: Response,
     ): Promise<Response> {
         try {
-            if (!tweet._id) {
+            if (!body._id) {
                 this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
-                )
+                );
             }
-            const updatedTweet: DocumentTweet = await this._tweetsService.updateTweet(tweet, principal);
+            if (!body.text) {
+                this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet text is missing')
+                );
+            }
+            const updatedTweet: DocumentTweet = await this._tweetsService.updateTweet(
+                new Tweet({
+                    _id: new Types.ObjectId(body._id),
+                    text: body.text,
+                    lastEdited: Date.now(),
+                })
+                , principal);
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: updatedTweet });
         } catch (error) {
             return this._fail(
@@ -217,77 +254,10 @@ export class TweetsController extends ControllerBase {
     }
 
     @ApiOperationGet({
-        description: 'Find tweet by id',
-        summary: 'Find tweet',
-        path: '/{id}',
-        parameters: {
-            path: {
-                id: {
-                    type: 'string',
-                    name: 'id',
-                    allowEmptyValue: false,
-                    description: 'Id of tweet to find',
-                    required: true
-                }
-            },
-        },
-        responses: {
-            200: {
-                description: 'Returns tweet dto',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'Tweet',
-            },
-            400: {
-                description: 'Parameters fail',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'HttpError',
-            },
-            401: {
-                description: 'Unauthorized',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'HttpError',
-            },
-            404: {
-                description: 'Tweet not found',
-                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'HttpError',
-            },
-        },
-        security: {
-            apiKeyHeader: [],
-        },
-    })
-    @httpGet('/:id', AuthMiddleware)
-    public async findTweetById(
-        @requestParam('id') id: string,
-        @principal() principal: Principal,
-        @request() req: Request,
-        @response() res: Response
-    ): Promise<Response> {
-        try {
-            if (!id) {
-                return this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
-                );
-            }
-            const tweet: DocumentTweet = await this._tweetsService.findById(
-                new Types.ObjectId(id),
-                principal
-            );
-            return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
-        } catch (error) {
-            return this._fail(
-                res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
-            );
-        }
-    }
-
-    @ApiOperationGet({
         description: 'Find tweets object by Author id/' +
             'If there is a tweetRetweet in this object it means that it is a retweet',
         summary: 'Find tweets',
+        path: '/author/{id}',
         parameters: {
             query: {
                 skip: {
@@ -317,7 +287,7 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Returns tweets dto',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Tweet',
             },
@@ -346,7 +316,7 @@ export class TweetsController extends ControllerBase {
         @queryParam('skip') skip: string,
         @queryParam('limit') limit: string,
         @principal() principal: Principal,
-        @requestParam('id') id,
+        @requestParam('id') id: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -367,7 +337,7 @@ export class TweetsController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -375,6 +345,7 @@ export class TweetsController extends ControllerBase {
     @ApiOperationPut({
         description: 'Like tweet object',
         summary: 'Like tweet',
+        path: '/like/{id}',
         parameters: {
             path: {
                 id: {
@@ -393,7 +364,7 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Returns tweet dto',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'Tweet',
             },
@@ -431,16 +402,15 @@ export class TweetsController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
                 );
             }
-            const userId: Types.ObjectId = principal.details._id;
             const tweet: DocumentTweet = await this._tweetsService.likeTweet(
-                userId,
+                principal.details._id,
                 new Types.ObjectId(id)
             );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -448,6 +418,7 @@ export class TweetsController extends ControllerBase {
     @ApiOperationPut({
         description: 'Unlike tweet object',
         summary: 'Unlike tweet',
+        path: '/unlike/{id}',
         parameters: {
             path: {
                 id: {
@@ -493,7 +464,7 @@ export class TweetsController extends ControllerBase {
     @httpPut('/unlike/:id', AuthMiddleware)
     public async unlikeTweet(
         @principal() principal: Principal,
-        @requestParam('id') id,
+        @requestParam('id') id: string,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
@@ -504,16 +475,15 @@ export class TweetsController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
                 );
             }
-            const userId: Types.ObjectId = principal.details._id;
             const tweet: DocumentTweet = await this._tweetsService.unlikeTweet(
-                userId,
+                principal.details._id,
                 new Types.ObjectId(id)
-            )
+            );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -521,7 +491,8 @@ export class TweetsController extends ControllerBase {
     @ApiOperationGet({
         description: 'Find tweets object by following/' +
             'If there is a tweetRetweet in this object it means that it is a retweet',
-        summary: 'Find tweets',
+        summary: 'Find feed',
+        path: '/feed',
         parameters: {
             query: {
                 skip: {
@@ -542,7 +513,7 @@ export class TweetsController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Returns tweets dto',
+                description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Tweet',
             },
@@ -584,7 +555,75 @@ export class TweetsController extends ControllerBase {
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
+            );
+        }
+    }
+
+    @ApiOperationGet({
+        description: 'Find tweet by id',
+        summary: 'Find tweet',
+        path: '/{id}',
+        parameters: {
+            path: {
+                id: {
+                    type: 'string',
+                    name: 'id',
+                    allowEmptyValue: false,
+                    description: 'Id of tweet to find',
+                    required: true
+                }
+            },
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet',
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Tweet not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpGet('/:id', AuthMiddleware)
+    public async findTweetById(
+        @requestParam('id') id: string,
+        @principal() principal: Principal,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            if (!id) {
+                return this._fail(
+                    res,
+                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                );
+            }
+            const tweet: DocumentTweet = await this._tweetsService.findById(
+                new Types.ObjectId(id),
+                principal
+            );
+            return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
+        } catch (error) {
+            return this._fail(
+                res,
+                error
             );
         }
     }
@@ -592,11 +631,18 @@ export class TweetsController extends ControllerBase {
     @ApiOperationPost({
         description: 'Retweet tweet object',
         summary: 'Retweet tweet',
+        path: '/retweet',
         parameters: {
             body: {
                 description: 'Retweet tweet',
                 required: true,
-                model: 'Tweet',
+                properties: {
+                    retweetedTweet: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                    }
+                }
             },
         },
         responses: {
@@ -627,13 +673,13 @@ export class TweetsController extends ControllerBase {
     })
     @httpPost('/retweet', AuthMiddleware)
     public async createRetweet(
-        @requestBody() tweet: Tweet,
+        @requestBody() body: { retweetedTweet: string },
         @request() req: Request,
         @response() res: Response,
         @principal() principal: Principal,
     ): Promise<Response> {
         try {
-            if (!tweet.retweetedTweet) {
+            if (!body.retweetedTweet) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
@@ -641,15 +687,16 @@ export class TweetsController extends ControllerBase {
             }
             const retweet: DocumentTweet = await this._tweetsService.createTweet(
                 new Tweet({
-                    ...tweet,
-                    authorId: principal.details._id
+                    retweetedTweet: new Types.ObjectId(body.retweetedTweet),
+                    authorId: principal.details._id,
+                    lastEdited: Date.now()
                 })
-            )
+            );
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet: retweet });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -673,16 +720,17 @@ export class TweetsController extends ControllerBase {
             200: {
                 description: 'Success',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Tweet'
             },
             400: {
                 description: 'Parameters fail',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'HttpError',
+                model: 'HttpError'
             },
             401: {
                 description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
-                model: 'HttpError',
+                model: 'HttpError'
             }
         },
         security: {
@@ -701,7 +749,7 @@ export class TweetsController extends ControllerBase {
             if (!id) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                    new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
                 );
             }
             const retweets: DocumentTweet[] = await this._tweetsService.findRetweetsByTweetId(
@@ -709,12 +757,12 @@ export class TweetsController extends ControllerBase {
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
-            )
+            );
             return this._success<{ tweets: DocumentTweet[] }>(res, OK, { tweets: retweets });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }
@@ -775,12 +823,12 @@ export class TweetsController extends ControllerBase {
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
-            )
+            );
             return this._success<{ users: DocumentUser[] }>(res, OK, { users });
         } catch (error) {
             return this._fail(
                 res,
-                new HttpError(INTERNAL_SERVER_ERROR, error.message)
+                error
             );
         }
     }

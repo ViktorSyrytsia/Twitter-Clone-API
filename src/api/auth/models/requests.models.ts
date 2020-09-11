@@ -15,28 +15,28 @@ export class FullCredentials extends Base {
     required: true,
     example: ['John']
 })
-firstName: string;
+public firstName: string;
 
 @ApiModelProperty({
     description: 'User lastname',
     required: true,
     example: ['Doe']
 })
-lastName: string;
+public lastName: string;
 
 @ApiModelProperty({
     description: 'User nickname',
     required: true,
     example: ['elonmusk']
 })
-username: string;
+public username: string;
 
 @ApiModelProperty({
     description: 'User email',
     required: true,
     example: ['example@gmail.com'],
 })
-email: string;
+public email: string;
 
 
 @ApiModelProperty({
@@ -44,7 +44,7 @@ email: string;
     required: true,
     example: ['catsAreCute!69']
 })
-password: string;
+public password: string;
 }
 
 @ApiModel({
@@ -57,13 +57,13 @@ export class Credentials extends Base {
     required: true,
     example: ['elonmusk', 'example@gmail.com']
 })
-emailOrUsername: string;
+public emailOrUsername: string;
 
 @ApiModelProperty({
     description: 'User password',
     required: true,
     example: ['catsAreCute!69']
 })
-password: string;
+public password: string;
 
 }
