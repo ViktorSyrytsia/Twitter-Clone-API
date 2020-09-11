@@ -6,11 +6,15 @@ import {Principal} from '../../auth/models/principal.model';
 import {HttpError} from '../../../shared/models/http.error';
 import {FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND} from 'http-status-codes';
 import {TweetsService} from '../../tweets/services/tweets.service';
+import {DocumentTweet} from '../../tweets/models/tweet.model';
+import {DocumentUser} from '../../users/models/user.model';
+import {UsersService} from '../../users/services/users.service';
 
 @injectable()
 export class CommentService {
     constructor(private _commentRepository: CommentRepository,
-                private _tweetService: TweetsService) {
+                private _tweetService: TweetsService,
+                private _usersService: UsersService) {
     }
 
     public async findById(id: Types.ObjectId): Promise<DocumentComment> {
@@ -18,29 +22,29 @@ export class CommentService {
     }
 
     public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<Object[]> {
-        const tweet = await this._tweetService.findById(tweetId, principal);
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'tweet not found');
         }
 
         try {
-            return this._commentRepository.findByTweet(tweetId, skip, limit);
+            return this._commentRepository.findByTweet(tweetId, principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
-    public async findRepliedComments(id: Types.ObjectId, skip: number, limit: number) {
+    public async findRepliedComments(id: Types.ObjectId, principal: Principal, skip: number, limit: number) {
         try {
-            return this._commentRepository.findRepliedCommentsByCommentId(id, skip, limit);
+            return this._commentRepository.findRepliedCommentsByCommentId(id, principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async createComment(text: string, principal: Principal, tweetId: Types.ObjectId): Promise<DocumentComment> {
-        const tweet = await this._tweetService.findById(tweetId, principal);
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'tweet not found');
@@ -60,7 +64,8 @@ export class CommentService {
     }
 
     public async updateComment(id: Types.ObjectId, text: string, principal: Principal): Promise<DocumentComment> {
-        const comment = await this._commentRepository.findById(id);
+
+        const comment: DocumentComment = await this._commentRepository.findById(id);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
@@ -81,7 +86,7 @@ export class CommentService {
     }
 
     public async deleteComment(principal: Principal, id: Types.ObjectId): Promise<DocumentComment> {
-        const comment = await this._commentRepository.findById(id);
+        const comment: DocumentComment = await this._commentRepository.findById(id);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
@@ -98,7 +103,7 @@ export class CommentService {
     }
 
     public async likeComment(principal: Principal, commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        const comment = await this._commentRepository.findById(commentId);
+        const comment: DocumentComment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
@@ -115,7 +120,7 @@ export class CommentService {
     }
 
     public async unlikeComment(principal: Principal, commentId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentComment> {
-        const comment = await this._commentRepository.findById(commentId);
+        const comment: DocumentComment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
@@ -133,7 +138,7 @@ export class CommentService {
 
 
     async replyComment(principal: Principal, commentId: Types.ObjectId, repliedCommentId: Types.ObjectId) {
-        const comment = await this._commentRepository.findById(commentId);
+        const comment: DocumentComment = await this._commentRepository.findById(commentId);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'comment not found');
@@ -144,6 +149,18 @@ export class CommentService {
 
         try {
             return this._commentRepository.replyComment(commentId, repliedCommentId);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    public async findLikesUsersByCommentId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
+        const comment: DocumentComment = await this._commentRepository.findById(id);
+        if (!comment) {
+            throw new HttpError(NOT_FOUND, 'Comment not found');
+        }
+        try {
+            return this._usersService.findByLikes(comment.likes as Types.ObjectId[], principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }

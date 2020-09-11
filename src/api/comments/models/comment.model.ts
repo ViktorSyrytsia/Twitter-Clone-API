@@ -55,7 +55,7 @@ export class Comment extends Base {
         required: true,
         example: ['1599137650207'],
     })
-    @prop({required:true, default: Date.now()})
+    @prop({required: true, default: Date.now()})
     public createdAt: number;
 
     @ApiModelProperty({
@@ -63,16 +63,33 @@ export class Comment extends Base {
         required: true,
         example: ['1599137650207'],
     })
-    @prop({required:true, default: Date.now()})
+    @prop({required: true, default: Date.now()})
     public lastEdited: number;
 
-    public get likesCount() {
-        return this.likes.length;
-    }
+    @ApiModelProperty({
+        description: 'number of likes',
+        required: true,
+        example: ['3', '15'],
+    })
+    public likesCount?: number;
+
+    @ApiModelProperty({
+        description: 'is liked by current user',
+        required: true,
+        example: ['true', 'false'],
+    })
+    public isLiked?: boolean;
+
+    @ApiModelProperty({
+        description: 'number of replies',
+        required: true,
+        example: ['3', '15'],
+    })
+    public repliesCount?: number;
 
     constructor(comment: CreateQuery<Comment>) {
         super();
-        Object.assign(this,comment);
+        Object.assign(this, comment);
     }
 }
 

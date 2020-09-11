@@ -1,11 +1,10 @@
 import {injectable} from 'inversify';
 import {ReturnModelType} from '@typegoose/typegoose';
-import {CreateQuery, Types} from 'mongoose';
+import {CreateQuery, DocumentQuery, Types} from 'mongoose';
 import {DatabaseConnection} from '../../../database/database-connection';
 import {Comment, DocumentComment} from '../models/comment.model';
 import {RepositoryBase} from '../../base/repository.base';
-
-const LIKES_LIMIT = 10;
+import {Principal} from '../../auth/models/principal.model';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {
@@ -20,12 +19,14 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findById(commentId);
     }
 
-    public async findByTweet(tweetId: Types.ObjectId, skip: number, limit: number): Promise<Object[]> {
-        return this.findCommentsByParam({tweetId}, skip, limit);
+    public async findByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<Object[]> {
+        const comments = this._repository.find({tweetId});
+        return this._addPaginationAndModify(comments, principal, skip, limit);
     }
 
-    async findRepliedCommentsByCommentId(commentId: Types.ObjectId, skip: number, limit: number) {
-        return this.findCommentsByParam({replyToComment: commentId}, skip, limit);
+    async findRepliedCommentsByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
+        const comments = this._repository.find({replyToComment: commentId});
+        return this._addPaginationAndModify(comments, principal, skip, limit);
     }
 
     public async createComment(comment: CreateQuery<Comment>): Promise<DocumentComment> {
@@ -52,44 +53,45 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._repository.findByIdAndUpdate(id, {replyToComment: repliedCommentId});
     }
 
-    private async findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
+    private async _addPaginationAndModify(
+        findCommentQuery: DocumentQuery<DocumentComment[], DocumentComment>,
+        principal: Principal,
+        skip?: number,
+        limit?: number
+    ): Promise<Object[]> {
+        if (skip) {
+            findCommentQuery = findCommentQuery.skip(skip);
+        }
+        if (limit) {
+            findCommentQuery = findCommentQuery.limit(limit);
+        }
+        return findCommentQuery
+            .map(async (comments: DocumentComment[]) => {
+                for (let i = 0; i < comments.length; i++) {
+                    comments[i] = await this._addFields(comments[i], principal);
+                }
+                return comments;
+            })
+            .populate({
+                path: 'likes',
+                select: '_id username firstName lastName avatar',
+                options: {
+                    skip: 0,
+                    limit: 10
+                }
+            });
+    }
+
+    private async _addFields(comment: DocumentComment, principal?: Principal): Promise<DocumentComment> {
+        comment.likesCount = comment.likes.length;
+        comment.isLiked = principal ? comment.likes.includes(principal.details._id) : false;
+        comment.repliesCount = await this._findNumberOfReplies(comment._id);
+        return comment;
+    }
+
+    private async _findNumberOfReplies(commentId: Types.ObjectId): Promise<number> {
         const comments = await this._repository.find({replyToComment: commentId});
         return comments.length;
     }
-
-    private async findCommentsByParam(param: Object, skip: number, limit: number): Promise<Object[]> {
-        let commentsQuery =
-            this._repository.find(param).populate({
-                path: 'likes',
-                select: '_id username avatar',
-                options: {
-                    limit: LIKES_LIMIT
-                }
-            });
-
-        if (skip) {
-            commentsQuery = commentsQuery.skip(skip);
-        }
-        if (limit) {
-            commentsQuery = commentsQuery.limit(limit);
-        }
-
-        commentsQuery[0].map(async (comment: DocumentComment) => {
-            return {
-                authorId: comment.authorId,
-                tweetId: comment.tweetId,
-                text: comment.text,
-                likes: comment.likes,
-                likesCount: comment.likesCount,
-                replyToComment: await this.findNumberOfReplies(comment._id),
-                createdAt: comment.createdAt,
-                lastEdited: comment.lastEdited,
-            };
-        });
-
-        return await Promise.all(commentsQuery[0]);
-    }
-
-
 }
 
