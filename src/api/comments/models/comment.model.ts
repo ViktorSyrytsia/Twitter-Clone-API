@@ -1,6 +1,6 @@
 import {Base} from '@typegoose/typegoose/lib/defaultClasses';
 import {DocumentType, prop, Ref} from '@typegoose/typegoose';
-import {CreateQuery, Types} from 'mongoose';
+import {CreateQuery} from 'mongoose';
 import { ApiModel, ApiModelProperty, SwaggerDefinitionConstant } from 'swagger-express-typescript';
 import {User} from '../../users/models/user.model';
 import {Tweet} from '../../tweets/models/tweet.model';
@@ -13,7 +13,8 @@ export class Comment extends Base {
     @ApiModelProperty({
         description: 'Author id of comment',
         required: true,
-        example: ['5f423af74c9234267e6aa6ea']
+        example: ['5f423af74c9234267e6aa6ea'],
+        type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
     @prop({required: true})
     public authorId: Ref<User>;
@@ -21,69 +22,79 @@ export class Comment extends Base {
     @ApiModelProperty({
         description: 'Tweet id of comment',
         required: false,
-        example: ['5f423af74c9234267e6aa6ea']
+        example: ['5f423af74c9234267e6aa6ea'],
+        type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
     @prop({required: false})
     public tweetId?: Ref<Tweet>;
 
     @ApiModelProperty({
-        description: 'text of comment',
+        description: 'Text of comment',
         required: true,
         example: ['some comment..'],
+        type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
     @prop({required: true})
     public text: string;
 
     @ApiModelProperty({
-        description: 'id of replied comment',
+        description: 'Id of replied comment',
         required: false,
-        example: ['5f423af74c9234267e6aa6ea']
+        example: ['5f423af74c9234267e6aa6ea'],
+        type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
     @prop({required: false})
     public repliedComment?: Ref<Comment>;
 
     @ApiModelProperty({
-        description: 'likes array of comment',
-        required: true,
+        description: 'Likes array of comment',
+        required: false,
         example: [['5f423af74c9234267e6aa6ea', '3r423af74c95f4267e6ak612']],
+        type: SwaggerDefinitionConstant.Response.Type.STRING,
+
     })
-    @prop({ref: () => User, required: true, default: []})
-    public likes?: Types.ObjectId[];
+    @prop({ref: () => User, required: false, default: []})
+    public likes?: Ref<User>[];
 
     @ApiModelProperty({
-        description: 'comment creation time stamp',
-        required: true,
+        description: 'Comment creation time stamp',
+        required: false,
         example: ['1599137650207'],
+        type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
-    @prop({required: true, default: Date.now()})
+    @prop({required: false, default: Date.now()})
     public createdAt?: number;
 
     @ApiModelProperty({
-        description: 'time stamp of last comment edition',
-        required: true,
+        description: 'Time stamp of last comment edition',
+        required: false,
         example: ['1599137650207'],
+        type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
-    @prop({required: true, default: Date.now()})
+    @prop({required: false, default: Date.now()})
     public lastEdited?: number;
 
     @ApiModelProperty({
-        description: 'number of likes',
-        required: true,
+        description: 'Number of likes',
+        required: false,
         example: ['3', '15'],
+        type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
     public likesCount?: number;
 
     @ApiModelProperty({
-        description: 'is liked by current user',
-        required: true,
+        description: 'Is liked by current user',
+        required: false,
         example: ['true', 'false'],
+        type: SwaggerDefinitionConstant.Response.Type.BOOLEAN,
     })
     public isLiked?: boolean;
 
     @ApiModelProperty({
-        description: 'number of replies',
-        required: true,
+        description: 'Number of replies',
+        required: false,
         example: ['3', '15'],
+        type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
     public repliesCount?: number;
 
