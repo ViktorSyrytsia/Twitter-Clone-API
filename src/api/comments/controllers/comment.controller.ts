@@ -100,7 +100,7 @@ export class CommentController extends ControllerBase {
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
-            )
+            );
             return this._success<{ users: DocumentUser[] }>(res, OK, { users });
         } catch (error) {
             return this._fail(

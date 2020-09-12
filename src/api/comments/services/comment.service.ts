@@ -137,7 +137,7 @@ export class CommentService {
     }
 
 
-    async replyComment(principal: Principal, commentId: Types.ObjectId, repliedCommentId: Types.ObjectId) {
+    public async replyComment(principal: Principal, commentId: Types.ObjectId, repliedCommentId: Types.ObjectId) {
         const comment: DocumentComment = await this._commentRepository.findById(commentId);
 
         if (!comment) {

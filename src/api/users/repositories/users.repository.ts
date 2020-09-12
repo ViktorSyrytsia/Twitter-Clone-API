@@ -103,7 +103,7 @@ export class UsersRepository extends RepositoryBase<User> {
     }
 
     public async getFollowingUsersByUserId(userId: Types.ObjectId): Promise<DocumentUser[]> {
-        return this._repository.find({ followers: { $elemMatch: { $eq: userId } } })
+        return this._repository.find({ followers: { $elemMatch: { $eq: userId } } });
     }
 
     public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
@@ -130,9 +130,9 @@ export class UsersRepository extends RepositoryBase<User> {
                     user.isFollower = principal ? principal.details.followers.includes(user._id) : false;
                     user.isFollowing = principal ? user.followers.includes(principal.details._id) : false;
                     delete user.followers;
-                    return users
-                })
-                return users
+                    return users;
+                });
+                return users;
             });
     }
 

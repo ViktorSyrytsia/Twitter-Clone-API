@@ -24,7 +24,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._addPaginationAndModify(comments, principal, skip, limit);
     }
 
-    async findRepliedCommentsByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
+    public async findRepliedCommentsByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
         const comments = this._repository.find({replyToComment: commentId});
         return this._addPaginationAndModify(comments, principal, skip, limit);
     }
