@@ -1,7 +1,7 @@
 import {Base} from '@typegoose/typegoose/lib/defaultClasses';
 import {DocumentType, prop, Ref} from '@typegoose/typegoose';
 import {CreateQuery, Types} from 'mongoose';
-import {ApiModel, ApiModelProperty} from 'swagger-express-typescript';
+import { ApiModel, ApiModelProperty, SwaggerDefinitionConstant } from 'swagger-express-typescript';
 import {User} from '../../users/models/user.model';
 import {Tweet} from '../../tweets/models/tweet.model';
 
@@ -20,19 +20,11 @@ export class Comment extends Base {
 
     @ApiModelProperty({
         description: 'Tweet id of comment',
-        required: true,
-        example: ['5f423af74c9234267e6aa6ea']
-    })
-    @prop({required: true})
-    public tweetId: Ref<Tweet>;
-
-    @ApiModelProperty({
-        description: 'id of replied comment',
         required: false,
         example: ['5f423af74c9234267e6aa6ea']
     })
     @prop({required: false})
-    public replyToComment: Ref<Comment>;
+    public tweetId?: Ref<Tweet>;
 
     @ApiModelProperty({
         description: 'text of comment',
@@ -43,12 +35,20 @@ export class Comment extends Base {
     public text: string;
 
     @ApiModelProperty({
+        description: 'id of replied comment',
+        required: false,
+        example: ['5f423af74c9234267e6aa6ea']
+    })
+    @prop({required: false})
+    public repliedComment?: Ref<Comment>;
+
+    @ApiModelProperty({
         description: 'likes array of comment',
         required: true,
-        example: [['5f423af74c9234267e6aa6ea', '3r423af74c95f4267e6ak612']]
+        example: [['5f423af74c9234267e6aa6ea', '3r423af74c95f4267e6ak612']],
     })
-    @prop({ref: () => User, required: true})
-    public likes: Types.ObjectId[];
+    @prop({ref: () => User, required: true, default: []})
+    public likes?: Types.ObjectId[];
 
     @ApiModelProperty({
         description: 'comment creation time stamp',
@@ -56,7 +56,7 @@ export class Comment extends Base {
         example: ['1599137650207'],
     })
     @prop({required: true, default: Date.now()})
-    public createdAt: number;
+    public createdAt?: number;
 
     @ApiModelProperty({
         description: 'time stamp of last comment edition',
@@ -64,7 +64,7 @@ export class Comment extends Base {
         example: ['1599137650207'],
     })
     @prop({required: true, default: Date.now()})
-    public lastEdited: number;
+    public lastEdited?: number;
 
     @ApiModelProperty({
         description: 'number of likes',
@@ -87,8 +87,21 @@ export class Comment extends Base {
     })
     public repliesCount?: number;
 
+    @ApiModelProperty({
+        description: 'Replies',
+        required: false,
+        model: 'Comment',
+        type: SwaggerDefinitionConstant.Response.Type.ARRAY,
+    })
+    public replies?: DocumentComment[]
+
     constructor(comment: CreateQuery<Comment>) {
         super();
+        this.likes = [];
+        this.likesCount = 0;
+        this.isLiked = false;
+        this.replies = [];
+        this.repliesCount = 0;
         Object.assign(this, comment);
     }
 }
