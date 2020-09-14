@@ -8,6 +8,7 @@ import {
 } from 'swagger-express-typescript';
 import { Types } from 'mongoose';
 
+
 import { ControllerBase } from '../../base/controller.base';
 import { Principal } from '../../auth/models/principal.model';
 import { UsersService } from '../services/users.service';
@@ -193,7 +194,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'User id is missing')
@@ -366,7 +367,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'User id is missing')
@@ -377,6 +378,7 @@ export class UsersController extends ControllerBase {
                 new Types.ObjectId(id)
             );
             return this._success<{ user: DocumentUser }>(res, OK, { user });
+
         } catch (error) {
             return this._fail(
                 res,
@@ -439,7 +441,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            if(!id) {
+            if (!id) {
                 return this._fail(
                     res,
                     new HttpError(BAD_REQUEST, 'User id is missing')
