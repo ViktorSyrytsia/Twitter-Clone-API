@@ -12,7 +12,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
     protected _repository: ReturnModelType<typeof Comment>;
 
     constructor(private _databaseConnection: DatabaseConnection,
-                private _userService: UsersService) {
+                private _usersService: UsersService) {
         super();
         this.initRepository(this._databaseConnection, Comment);
     }
@@ -26,7 +26,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._addPaginationAndModify(findCommentsQuery, principal, skip, limit);
     }
 
-    async findRepliedCommentsByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
+    public async findRepliesByCommentId(commentId: Types.ObjectId, principal: Principal, skip: number, limit: number) {
         const findCommentsQuery: DocumentQuery<DocumentComment[], DocumentComment> = this._repository.find({repliedComment: commentId});
         return this._addPaginationAndModify(findCommentsQuery, principal, skip, limit);
     }
@@ -103,7 +103,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         comment.likesCount = comment.likes.length;
         comment.isLiked = await principal.isAuthenticated() ? comment.likes.includes(principal.details._id) : false;
         comment.repliesCount = await this._repository.count({repliedComment: comment._id});
-        comment.likes = await this._userService.findByLikes(comment.likes as Types.ObjectId[], principal, 0, 5);
+        comment.likes = await this._usersService.findByLikes(comment.likes as Types.ObjectId[], principal, 0, 5);
         comment.replies = [];
 
         const replies: DocumentComment[] = await this._repository

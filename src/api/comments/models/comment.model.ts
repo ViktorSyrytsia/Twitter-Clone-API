@@ -104,7 +104,7 @@ export class Comment extends Base {
         model: 'Comment',
         type: SwaggerDefinitionConstant.Response.Type.ARRAY,
     })
-    public replies?: DocumentComment[]
+    public replies?: DocumentComment[];
 
     constructor(comment: CreateQuery<Comment>) {
         super();

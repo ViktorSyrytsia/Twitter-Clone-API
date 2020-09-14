@@ -1,38 +1,25 @@
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import {
-    controller,
-    httpDelete,
-    httpGet,
-    httpPut,
-    principal,
-    queryParam,
-    request,
-    requestBody,
-    requestParam,
-    response,
+    controller, httpDelete, httpGet, httpPut, principal, queryParam, request, requestBody, requestParam, response,
 } from 'inversify-express-utils';
-import {BAD_REQUEST, INTERNAL_SERVER_ERROR, OK} from 'http-status-codes';
+import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK } from 'http-status-codes';
 import {
-    ApiOperationDelete,
-    ApiOperationGet,
-    ApiOperationPut,
-    ApiPath,
-    SwaggerDefinitionConstant,
+    ApiOperationDelete, ApiOperationGet, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
-import {Types} from 'mongoose';
+import { Types } from 'mongoose';
 
 
-import {ControllerBase} from '../../base/controller.base';
-import {Principal} from '../../auth/models/principal.model';
-import {UsersService} from '../services/users.service';
-import {DocumentUser, User} from '../models/user.model';
-import {HttpError} from '../../../shared/models/http.error';
-import {AuthMiddleware} from '../../auth/middlewares/auth.middleware';
+import { ControllerBase } from '../../base/controller.base';
+import { Principal } from '../../auth/models/principal.model';
+import { UsersService } from '../services/users.service';
+import { DocumentUser, User } from '../models/user.model';
+import { HttpError } from '../../../shared/models/http.error';
+import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 
 @ApiPath({
     path: '/api/v1/users',
     name: 'Users',
-    security: {apiKeyHeader: []},
+    security: { apiKeyHeader: [] },
 })
 @controller('/users')
 export class UsersController extends ControllerBase {
@@ -390,7 +377,7 @@ export class UsersController extends ControllerBase {
                 principal.details._id,
                 new Types.ObjectId(id)
             );
-            return this._success<{ user: DocumentUser }>(res, OK, {user});
+            return this._success<{ user: DocumentUser }>(res, OK, { user });
 
         } catch (error) {
             return this._fail(
@@ -464,7 +451,7 @@ export class UsersController extends ControllerBase {
                 principal.details._id,
                 new Types.ObjectId(id)
             );
-            return this._success<{ user: DocumentUser }>(res, OK, {user});
+            return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
             return this._fail(
                 res,

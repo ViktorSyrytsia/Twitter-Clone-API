@@ -37,7 +37,7 @@ export class CommentService {
 
     public async findRepliedComments(id: Types.ObjectId, principal: Principal, skip: number, limit: number) {
         try {
-            return this._commentRepository.findRepliedCommentsByCommentId(id, principal, skip, limit);
+            return this._commentRepository.findRepliesByCommentId(id, principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -135,7 +135,7 @@ export class CommentService {
     }
 
 
-    async replyComment(text: string, principal: Principal, repliedCommentId: Types.ObjectId) {
+    public async replyComment(text: string, principal: Principal, repliedCommentId: Types.ObjectId) {
         const comment: DocumentComment = await this._commentRepository.findById(repliedCommentId);
 
         if (!comment) {
