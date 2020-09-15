@@ -28,7 +28,8 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
     public async updateTweet(tweet: UpdateQuery<Tweet>, principal: Principal): Promise<DocumentTweet> {
         const updatedTweet: DocumentTweet = await this._repository.findByIdAndUpdate(tweet._id, {
             $set: { ...tweet }
-        }, { new: true });
+        }, { new: true })
+            .lean();
         return this._addFields(updatedTweet, principal);
     }
 
@@ -38,7 +39,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
 
     public async findById(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
         return this._addFields(
-            await this._repository.findById(id),
+            await this._repository.findById(id).lean(),
             principal
         );
     }
@@ -88,6 +89,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
             findTweetsQuery = findTweetsQuery.limit(limit);
         }
         return findTweetsQuery
+            .lean()
             .map(async (tweets: DocumentTweet[]) => {
                 for (let i = 0; i < tweets.length; i++) {
                     tweets[i] = await this._addFields(tweets[i], principal);

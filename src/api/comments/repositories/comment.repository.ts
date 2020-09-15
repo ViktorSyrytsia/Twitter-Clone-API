@@ -18,7 +18,9 @@ export class CommentRepository extends RepositoryBase<Comment> {
     }
 
     public async findById(commentId: Types.ObjectId, principal?: Principal): Promise<DocumentComment> {
-        const comment: DocumentComment = await this._repository.findById(commentId);
+        const comment: DocumentComment = await this._repository
+            .findById(commentId)
+            .lean();
         return this._addFields(comment, principal);
     }
 
