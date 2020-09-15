@@ -34,4 +34,8 @@ export class TokenRepository extends RepositoryBase<Token> {
     public async deleteToken(tokenId: Types.ObjectId): Promise<DocumentToken> {
         return this._repository.findByIdAndDelete(tokenId);
     }
+
+    public async deleteTokenByUserId(userId: Types.ObjectId): Promise<DocumentToken> {
+        return this._repository.findOneAndDelete({ userId: userId});
+    }
 }

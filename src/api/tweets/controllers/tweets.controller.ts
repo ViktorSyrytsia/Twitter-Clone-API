@@ -804,7 +804,7 @@ export class TweetsController extends ControllerBase {
         },
     })
     @httpGet('/likes/:id', AuthMiddleware)
-    public async findLikesUsersByTweetId(
+    public async findLikersByTweetId(
         @requestParam('id') id: string,
         @principal() principal: Principal,
         @queryParam('skip') skip: string,
@@ -818,7 +818,7 @@ export class TweetsController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'Tweet id is missing')
                 );
             }
-            const users: DocumentUser[] = await this._tweetsService.findLikesUsersByTweetId(
+            const users: DocumentUser[] = await this._tweetsService.findLikersByTweetId(
                 new Types.ObjectId(id),
                 principal,
                 Number.parseInt(skip),

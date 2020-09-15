@@ -106,6 +106,14 @@ export class Comment extends Base {
     })
     public replies?: DocumentComment[];
 
+    @ApiModelProperty({
+        description: 'Is comment replied current user',
+        required: false,
+        example: ['true', 'false'],
+        type: SwaggerDefinitionConstant.Response.Type.BOOLEAN,
+    })
+    public isReplied?: boolean;
+
     constructor(comment: CreateQuery<Comment>) {
         super();
         this.likes = [];
@@ -113,6 +121,7 @@ export class Comment extends Base {
         this.isLiked = false;
         this.replies = [];
         this.repliesCount = 0;
+        this.isReplied = false;
         Object.assign(this, comment);
     }
 }

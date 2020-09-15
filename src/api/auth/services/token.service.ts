@@ -8,7 +8,9 @@ import { Types } from 'mongoose';
 
 @injectable()
 export class TokenService {
-    constructor(private _tokenRepository: TokenRepository) {}
+    constructor(
+        private _tokenRepository: TokenRepository) {
+    }
 
     public async findTokenByBodyAndType(
         body: string,
@@ -30,7 +32,15 @@ export class TokenService {
         );
     }
 
-    public async deleteToken(tokenId: Types.ObjectId): Promise<DocumentToken> {
+    public async deleteToken(
+        tokenId: Types.ObjectId
+    ): Promise<DocumentToken> {
         return this._tokenRepository.deleteToken(tokenId);
+    }
+
+    public async deleteTokenByUserId(
+        userId: Types.ObjectId
+    ): Promise<DocumentToken> {
+        return this._tokenRepository.deleteTokenByUserId(userId);
     }
 }

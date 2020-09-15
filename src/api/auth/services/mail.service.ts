@@ -29,7 +29,10 @@ export class MailService {
         });
     }
 
-    public sendConfirmMail(email: string, token: string): Promise<void> {
+    public sendConfirmMail(
+        email: string,
+        token: string
+    ): Promise<void> {
         return this._sendEmail(
             email,
             'Confirm email',
@@ -38,7 +41,12 @@ export class MailService {
         );
     }
 
-    private async _sendEmail(email: string, subject: string, token: string, template: EmailTemplatesEnum): Promise<void> {
+    private async _sendEmail(
+        email: string,
+        subject: string,
+        token: string,
+        template: EmailTemplatesEnum
+    ): Promise<void> {
         try {
             const frontendUrl: string = process.env.FRONTEND_URL,
                 html: string = await this._emailTemplates.render(template, {
@@ -55,5 +63,4 @@ export class MailService {
             throw new HttpError(500, 'Template render error');
         }
     }
-
 }

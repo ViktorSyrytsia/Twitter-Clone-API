@@ -32,6 +32,7 @@ import {HttpError} from '../../../shared/models/http.error';
 import {Principal} from '../../auth/models/principal.model';
 import {AuthMiddleware} from '../../auth/middlewares/auth.middleware';
 import {DocumentUser} from '../../users/models/user.model';
+import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
 
 @ApiPath({
     path: '/api/v1/comments',
@@ -116,7 +117,7 @@ export class CommentController extends ControllerBase {
                     new HttpError(BAD_REQUEST, 'Comment id is missing')
                 );
             }
-            const users: DocumentUser[] = await this._commentService.findLikesUsersByCommentId(
+            const users: DocumentUser[] = await this._commentService.findLikersByCommentId(
                 new Types.ObjectId(id),
                 principal,
                 Number.parseInt(skip),
@@ -200,6 +201,7 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
             );
         }
+
         try {
             const comments: DocumentComment[] =
                 await this._commentService.findCommentsByTweet(
@@ -284,6 +286,7 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
+
         try {
             const comments: DocumentComment[] =
                 await this._commentService.findRepliedComments(
@@ -338,6 +341,16 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             404: {
                 description: 'Tweet not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -353,7 +366,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPost('/:tweetId', AuthMiddleware)
+    @httpPost('/:tweetId', AuthMiddleware, ActivatedUserMiddleware)
     public async createComment(
         @principal() principal: Principal,
         @requestParam('tweetId') tweetId: string,
@@ -373,11 +386,14 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment text is missing')
             );
         }
+
         try {
             const createdComment: DocumentComment =
-                await this._commentService.createComment(body.text,
+                await this._commentService.createComment(
+                    body.text,
                     principal,
-                    new Types.ObjectId(tweetId));
+                    new Types.ObjectId(tweetId)
+                );
 
             return this._success<{ comment: DocumentComment }>(res, CREATED, {
                 comment: createdComment
@@ -425,8 +441,13 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             403: {
-                description: 'Not comment author',
+                description: 'Account not activated | Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -445,7 +466,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPut('/:id', AuthMiddleware)
+    @httpPut('/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async updateComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
@@ -465,6 +486,7 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment text is missing')
             );
         }
+
         try {
             const updatedComment: DocumentComment =
                 await this._commentService.updateComment(
@@ -507,8 +529,13 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             403: {
-                description: 'Not comment author',
+                description: 'Account not activated | Not comment author',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -527,7 +554,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpDelete('/:id', AuthMiddleware)
+    @httpDelete('/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async deleteComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
@@ -540,6 +567,7 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment id is missing')
             );
         }
+
         try {
             const deletedComment: DocumentComment = await this._commentService
                 .deleteComment(principal, new Types.ObjectId(id));
@@ -580,6 +608,16 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             404: {
                 description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -600,7 +638,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPatch('/like/:id', AuthMiddleware)
+    @httpPatch('/like/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async likeComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
@@ -656,6 +694,16 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             404: {
                 description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -676,7 +724,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPatch('/unlike/:id', AuthMiddleware)
+    @httpPatch('/unlike/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async unlikeComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
@@ -742,6 +790,16 @@ export class CommentController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
             404: {
                 description: 'Comment not found',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
@@ -757,7 +815,7 @@ export class CommentController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPost('/reply/:id', AuthMiddleware)
+    @httpPost('/reply/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async replyComment(
         @principal() principal: Principal,
         @requestParam('id') id: string,
@@ -777,6 +835,7 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Comment text is missing')
             );
         }
+
         try {
             const comment: DocumentComment =
                 await this._commentService.replyComment(
@@ -785,9 +844,7 @@ export class CommentController extends ControllerBase {
                     new Types.ObjectId(id),
                 );
 
-            return this._success<{ comment: DocumentComment }>(res, CREATED, {
-                comment
-            });
+            return this._success<{ comment: DocumentComment }>(res, CREATED, { comment });
         } catch (error) {
             return this._fail(res, error);
         }

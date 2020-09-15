@@ -1,11 +1,14 @@
-import { controller, httpPost, request, requestBody, response, requestParam } from 'inversify-express-utils';
+import { controller, httpPost, request, requestBody, response, requestParam, httpGet, principal } from 'inversify-express-utils';
 import { Request, Response } from 'express';
+import { ApiPath, ApiOperationPost, ApiOperationGet } from 'swagger-express-typescript';
 
 import { ControllerBase } from '../../base/controller.base';
 import { AuthService } from '../services/auth.service';
-import { FullCredentials, Credentials } from '../models/requests.models';
-import { ApiPath, ApiOperationPost } from 'swagger-express-typescript';
-import { UserWithToken } from '../models/userWithToken.model';
+import { UserWithToken } from '../models/user-with-token.model';
+import { SignInCredentials } from '../interfaces/sign-in-credentials.interface';
+import { SignUpCredentials } from '../interfaces/sign-up-credentials.interface';
+import { Principal } from '../models/principal.model';
+import { AuthMiddleware } from '../middlewares/auth.middleware';
 
 
 @ApiPath({
@@ -17,7 +20,6 @@ import { UserWithToken } from '../models/userWithToken.model';
 })
 @controller('/auth')
 export class AuthController extends ControllerBase {
-
     constructor(
         private _authService: AuthService
     ) {
@@ -31,25 +33,57 @@ export class AuthController extends ControllerBase {
             body: {
                 required: true,
                 allowEmptyValue: false,
-                model: 'FullCredentials',
-                description: 'Valid passwords are at least 6 characters long, contain numbers, uppercase and lowercase letters.'
+                description: 'Valid passwords are at least 6 characters long, contain numbers, uppercase and lowercase letters',
+                properties: {
+                    firstName: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User firstname',
+                        example: 'Json'
+                    },
+                    lastName: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User lastname',
+                        example: 'Bourne'
+                    },
+                    username: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User nickname',
+                        example: 'elonmusk'
+                    },
+                    email: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User email',
+                        example: 'example@gmail.com'
+                    },
+                    password: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User password',
+                        example: 'catsAreCute!2020'
+                    }
+                }
             }
         },
         responses: {
             200: {
-                description: '{"status": "ok"}',
-            },
-            406: {
-                model: 'HttpError',
-                description: 'This username is already taken.'
+                description: 'Sends verification link to specified email',
             },
             409: {
                 model: 'HttpError',
-                description: 'This email already exists.'
+                description: 'This email already exists | This username already exists'
             },
             422: {
                 model: 'HttpError',
-                description: 'Wrong json. | Wrong email format. | Password must be at least 6 characters long, contain numbers, uppercase and lowercase letters.'
+                description: 'Wrong json | Wrong email format | Password must be at least 6 characters long, contain numbers, uppercase and lowercase letters'
             }
         },
         security: {
@@ -58,50 +92,13 @@ export class AuthController extends ControllerBase {
     })
     @httpPost('/sign-up')
     public async signUp(
-        @requestBody() fullCredentials: FullCredentials,
+        @requestBody() credentials: SignUpCredentials,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
-            await this._authService.signUp(fullCredentials);
-            return this._success(res, 200, response);
-        } catch (error) {
-            return this._fail(res, error);
-        }
-    }
-
-    @ApiOperationPost({
-        summary: 'Email verification page',
-        path: '/email/confirm/{token}',
-        parameters: {
-            query: {
-                token: {
-                    name: 'token',
-                    description: 'Email confirmation token',
-                    required: true
-                }
-            },
-        },
-        responses: {
-            200: {
-                model: 'UserWithToken',
-                description: 'Returns user with jwt token.'
-            },
-            417: {
-                model: 'HttpError',
-                description: 'Token is broken or expired.'
-            }
-        }
-    })
-    @httpPost('/email/confirm/:token')
-    public async confirmEmail(
-        @requestParam('token') token: string,
-        @request() req: Request,
-        @response() res: Response
-    ): Promise<Response> {
-        try {
-            const response: UserWithToken = await this._authService.confirmEmail(token);
-            return this._success<UserWithToken> (res, 200, response);
+            await this._authService.signUp(credentials);
+            return this._success(res, 200);
         } catch (error) {
             return this._fail(res, error);
         }
@@ -113,37 +110,119 @@ export class AuthController extends ControllerBase {
         parameters: {
             body: {
                 required: true,
-                model: 'Credentials',
+                allowEmptyValue: false,
+                description: 'Accepts emails or usernames',
+                properties: {
+                    emailOrUsername: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User email or username',
+                        example: 'elonmusk || example@gmail.com'
+                    },
+                    password: {
+                        type: 'string',
+                        required: true,
+                        allowEmptyValue: false,
+                        description: 'User password',
+                        example: 'catsAreCute!2020'
+                    }
+                }
             }
         },
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt token.'
+                description: 'Returns user with jwt token'
             },
             417: {
                 model: 'HttpError',
-                description: 'User doesn\'t exist or password doesn\'t match.'
+                description: 'User doesn\'t exist or password doesn\'t match'
             },
             422: {
                 model: 'HttpError',
-                description: 'Wrong json.'
+                description: 'Wrong json'
             },
-            412: {
-                model: 'HttpError',
-                description: 'User was not activated.'
-            }
         }
     })
     @httpPost('/sign-in')
     public async signIn(
-        @requestBody() credentials: Credentials,
+        @requestBody() credentials: SignInCredentials,
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
         try {
-            const response: UserWithToken = await this._authService.signIn(credentials);
-            return this._success<UserWithToken> (res, 200, response);
+            const userWithToken: UserWithToken = await this._authService.signIn(credentials);
+            return this._success<UserWithToken> (res, 200, userWithToken);
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationGet({
+        summary: 'Email verification',
+        path: '/confirm-email/{token}',
+        parameters: {
+            path: {
+                token: {
+                    name: 'token',
+                    description: 'Email confirmation token',
+                    required: true
+                }
+            },
+        },
+        responses: {
+            200: {
+                model: 'UserWithToken',
+                description: 'Returns user with jwt token'
+            },
+            417: {
+                model: 'HttpError',
+                description: 'Token is broken or expired'
+            }
+        }
+    })
+    @httpGet('/confirm-email/:token')
+    public async confirmEmail(
+        @requestParam('token') token: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            const userWithToken: UserWithToken = await this._authService.confirmEmail(token);
+            return this._success<UserWithToken> (res, 200, userWithToken);
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationGet({
+        summary: 'Resend verification link',
+        path: '/resend-confirm-email',
+        description: 'In case if original link expires (5m lifetime)',
+        responses: {
+            200: {
+                description: 'Sends new verification link to user\'s email'
+            },
+            404: {
+                model: 'HttpError',
+                description: 'User not found'
+            },
+            409: {
+                model: 'HttpError',
+                description: 'User already activated'
+            }
+        }
+    })
+    @httpGet('/resend-confirm-email', AuthMiddleware)
+    public async resendConfirmEmail(
+        @principal() principal: Principal,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        try {
+            await this._authService.resendConfirmEmail(principal);
+            return this._success(res, 200);
         } catch (error) {
             return this._fail(res, error);
         }

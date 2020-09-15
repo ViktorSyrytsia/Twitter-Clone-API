@@ -106,14 +106,28 @@ export class User extends Base {
         required: false,
         example: [false],
     })
-    public isFollowing?: boolean;
+    public isFollowed?: boolean;
 
     @ApiModelProperty({
         description: 'Is user follower of current user',
         required: false,
-        example: [false],
+        example: [true],
     })
     public isFollower?: boolean;
+
+    @ApiModelProperty({
+        description: 'Number of people following current user',
+        required: false,
+        example: ['15'],
+    })
+    public followersCount?: number;
+
+    @ApiModelProperty({
+        description: 'Number of people followed by current user',
+        required: false,
+        example: ['24'],
+    })
+    public followingCount?: number;
 
     constructor(user: CreateQuery<User>) {
         super();

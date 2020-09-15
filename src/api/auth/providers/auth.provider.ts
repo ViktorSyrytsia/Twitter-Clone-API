@@ -20,7 +20,7 @@ export class AuthProvider implements interfaces.AuthProvider {
         try {
             const user = await this._authService.getUserFromToken(token);
             return new Principal(user);
-        } catch(e) {
+        } catch(error) {
             return new Principal(null);
         }
     }

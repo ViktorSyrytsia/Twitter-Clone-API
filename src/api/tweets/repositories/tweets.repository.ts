@@ -47,17 +47,17 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         const findTweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository
             .find({ authorId: { $in: authorsIds } })
             .sort({ createdAt: -1 });
-        return this._addPaginationAndModify(findTweetsQuery, principal, skip, limit);
+        return this._addLazyLoadAndModify(findTweetsQuery, principal, skip, limit);
     }
 
     public async findRetweetsByTweetId(tweetId: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
         const findRetweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet> = this._repository.find({ retweetedTweet: tweetId })
             .sort({ createdAt: -1 });
-        return this._addPaginationAndModify(findRetweetsQuery, principal, skip, limit);
+        return this._addLazyLoadAndModify(findRetweetsQuery, principal, skip, limit);
     }
 
-    public async findLikesUsersByTweetId(likes: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
-        return this._usersService.findByLikes(likes as Types.ObjectId[], principal, skip, limit);
+    public async findLikersByTweetId(likes: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
+        return this._usersService.findUsersByUserIds(likes as Types.ObjectId[], principal, skip, limit);
     }
 
     public async likeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
@@ -75,7 +75,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         );
     }
 
-    private async _addPaginationAndModify(
+    private async _addLazyLoadAndModify(
         findTweetsQuery: DocumentQuery<DocumentTweet[], DocumentTweet>,
         principal: Principal,
         skip?: number,
@@ -93,21 +93,24 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
                     tweets[i] = await this._addFields(tweets[i], principal);
                 }
                 return tweets;
-            })
+            });
     }
 
     private async _addFields(tweet: DocumentTweet, principal?: Principal): Promise<DocumentTweet> {
+        if (principal && await principal.isAuthenticated()) {
+            tweet.isLiked = tweet.likes.includes(principal.details._id);
+            tweet.isRetweeted = await this._repository.exists({
+                retweetedTweet: tweet._id,
+                authorId: principal.details._id
+            });
+        }
+
         tweet.likesCount = tweet.likes.length;
-        tweet.isLiked = principal ? tweet.likes.includes(principal.details._id) : false;
         tweet.retweetsCount = (await this._repository.find({ retweetedTweet: tweet._id })).length;
-        tweet.isRetweeted = principal ? await this._repository.exists({
-            retweetedTweet: tweet._id,
-            authorId: principal.details._id
-        }) : false;
-        tweet.likes = await this._usersService.findByLikes(tweet.likes as Types.ObjectId[], principal, 0, 5);
+        tweet.likes = await this._usersService.findUsersByUserIds(tweet.likes as Types.ObjectId[], principal, 0, 5);
 
         if (tweet.retweetedTweet) {
-            tweet.retweetedTweet = await this.findById(tweet.retweetedTweet as Types.ObjectId, principal)
+            tweet.retweetedTweet = await this.findById(tweet.retweetedTweet as Types.ObjectId, principal);
         }
 
         return tweet;

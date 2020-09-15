@@ -7,44 +7,70 @@ import { DocumentUser, User } from '../models/user.model';
 import { RepositoryBase } from '../../base/repository.base';
 import { Principal } from '../../auth/models/principal.model';
 
+
 @injectable()
 export class UsersRepository extends RepositoryBase<User> {
     protected _repository: ReturnModelType<typeof User>;
 
-    constructor(private _databaseConnection: DatabaseConnection) {
+    private _selectFields: string = '_id username firstName lastName avatar followers email active';
+
+    constructor(
+        private _databaseConnection: DatabaseConnection
+    ) {
         super();
         this.initRepository(this._databaseConnection, User);
     }
 
-    public async findById(userId: Types.ObjectId): Promise<DocumentUser> {
-        return this._repository.findById(userId);
+    public async findById(userId: Types.ObjectId, principal?: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findById(userId)
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async findAll(skip: number, limit: number): Promise<DocumentUser[]> {
-        let usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find();
-        if (skip) {
-            usersQuery = usersQuery.skip(skip);
-        }
-        if (limit) {
-            usersQuery = usersQuery.limit(skip);
-        }
-        return usersQuery;
+    public async findAll(
+        skip: number,
+        limit: number,
+        principal: Principal
+    ): Promise<DocumentUser[]> {
+        const usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find();
+        return this._addLazyLoadAndModify(usersQuery, principal, skip, limit);
+
     }
 
-    public async findByUsername(userUsername: string): Promise<DocumentUser> {
-        return this._repository.findOne({ username: userUsername });
+    public async findByUsername(username: string, principal?: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findOne({ username })
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async findByEmail(userEmail: string): Promise<DocumentUser> {
-        return this._repository.findOne({ email: userEmail });
+    public async findByEmail(email: string, principal?: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findOne({ email })
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
+    }
+
+    public async findUserByEmailOrUsername(emailOrUsername: string, principal?: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findOne({
+                $or: [{ username: emailOrUsername }, { email: emailOrUsername }]
+            })
+            .lean();
+        return this._addFields(user, principal);
     }
 
     public async findBySearch(
         search: string,
         skip: number,
-        limit: number
+        limit: number,
+        principal?: Principal
     ): Promise<DocumentUser[]> {
-        let usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find({
+        const usersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository.find({
             $or: [
                 {
                     username: {
@@ -72,75 +98,152 @@ export class UsersRepository extends RepositoryBase<User> {
                 },
             ],
         });
-        if (skip) {
-            usersQuery = usersQuery.skip(skip);
-        }
-        if (limit) {
-            usersQuery = usersQuery.limit(skip);
-        }
-        return usersQuery;
+        return this._addLazyLoadAndModify(usersQuery, principal, skip, limit);
     }
 
-    public async createUser(user: CreateQuery<User>): Promise<DocumentUser> {
-        return this._repository.create(user);
+    public async createUser(user: CreateQuery<User>, principal?: Principal): Promise<DocumentUser> {
+        const newUser: DocumentUser = await this._repository
+            .create(user);
+        return this._addFields(newUser, principal);
     }
 
-    public async updateUser(
-        userId: Types.ObjectId,
-        data: object
-    ): Promise<DocumentUser> {
-        return this._repository.findByIdAndUpdate(userId, data, { new: true });
+    public async updateUser(user: User, principal?: Principal): Promise<DocumentUser> {
+        const updatedUser: DocumentUser = await this._repository
+            .findByIdAndUpdate(
+                principal.details._id,
+                {
+                    $set: {
+                        avatar: user.avatar,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        username: user.username,
+                        email: user.email,
+                        active: user.email === principal.details.email,
+                        lastUpdated: Date.now()
+                    }
+                },
+                { new: true }
+            )
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(updatedUser, principal);
     }
 
-    public async activateUser(
-        userId: Types.ObjectId
-    ): Promise<DocumentUser> {
-        return this._repository.findByIdAndUpdate(userId, { $set: { active: true } }, { new: true });
+    public async activateUser(userId: Types.ObjectId, principal?: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findByIdAndUpdate(userId, { $set: { active: true } }, { new: true })
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async deleteUser(userId: Types.ObjectId): Promise<DocumentUser> {
-        return this._repository.findByIdAndDelete(userId);
+    public async deleteUser(principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findByIdAndDelete(principal.details._id)
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async getFollowingUsersByUserId(userId: Types.ObjectId): Promise<DocumentUser[]> {
-        return this._repository.find({ followers: { $elemMatch: { $eq: userId } } });
+    public async followUser(userIdToFollow: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findByIdAndUpdate(
+                userIdToFollow,
+                { $addToSet: { followers: principal.details._id } }
+            )
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async followUser(userId: Types.ObjectId, userIdToFollow: Types.ObjectId): Promise<DocumentUser> {
-        return this._repository.update(
-            { _id: userIdToFollow },
-            { $push: { followers: userId } }
-        );
+    public async unfollowUser(userIdToUnFollow: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findByIdAndUpdate(
+                userIdToUnFollow,
+                { $pull: { followers: principal.details._id } }
+            )
+            .select(this._selectFields)
+            .lean();
+        return this._addFields(user, principal);
     }
 
-    public async findByLikes(usersIds: Types.ObjectId[], principal: Principal, skip?: number, limit?: number): Promise<DocumentUser[]> {
-        let findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
+    public async findUsersByUserIds(
+        usersIds: Types.ObjectId[],
+        principal: Principal,
+        skip?: number,
+        limit?: number
+    ): Promise<DocumentUser[]> {
+        const findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
             .find({ _id: { $in: usersIds } });
+        return this._addLazyLoadAndModify(findUsersQuery, principal, skip, limit);
+    }
 
+    public async findFollowers(
+        userId: Types.ObjectId,
+        principal?: Principal,
+        skip?: number,
+        limit?: number
+    ): Promise<DocumentUser[]> {
+        const followerIds = (await this.findById(userId)).followers,
+            findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
+                .find({ _id: { $in: followerIds } });
+        return this._addLazyLoadAndModify(findUsersQuery, principal, skip, limit);
+    }
+
+    public async findFollows(
+        userId: Types.ObjectId,
+        principal?: Principal,
+        skip?: number,
+        limit?: number
+    ): Promise<DocumentUser[]> {
+        const findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
+            .find({ followers: { $elemMatch: { $eq: userId } } });
+        return this._addLazyLoadAndModify(findUsersQuery, principal, skip, limit);
+    }
+
+    private async _addFields(
+        user: DocumentUser,
+        principal?: Principal
+    ): Promise<DocumentUser> {
+        if (!user) {
+            return null;
+        }
+
+        if (principal && await principal.isAuthenticated() && user.email !== principal.details.email) {
+            user.isFollower = (await this.findById(principal.details._id)).followers.includes(user._id);
+            user.isFollowed = (await this.findById(user._id)).followers.includes(principal.details._id);
+        }
+
+        user.followersCount = user.followers.length;
+        user.followingCount = await this._repository.count({ followers: { $elemMatch: { $eq: user._id } } });
+
+        delete user.followers;
+
+        return user;
+    }
+
+    private async _addLazyLoadAndModify(
+        findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser>,
+        principal: Principal,
+        skip?: number,
+        limit?: number
+    ): Promise<DocumentUser[]> {
         if (skip) {
             findUsersQuery = findUsersQuery.skip(skip);
         }
         if (limit) {
             findUsersQuery = findUsersQuery.limit(limit);
         }
-        return findUsersQuery
-            .select('_id username firstName lastName avatar followers')
-            .map((users: DocumentUser[]) => {
-                users.map((user: DocumentUser) => {
-                    user.isFollower = principal ? principal.details.followers.includes(user._id) : false;
-                    user.isFollowing = principal ? user.followers.includes(principal.details._id) : false;
-                    delete user.followers;
-                    return users;
-                });
+
+        findUsersQuery
+            .select(this._selectFields)
+            .lean()
+            .map(async (users: DocumentUser[]) => {
+                for (const user of users) {
+                    await this._addFields(user, principal);
+                }
                 return users;
             });
-    }
-
-    public async unfollowUser(userId: Types.ObjectId, userIdToUnFollow: Types.ObjectId): Promise<DocumentUser> {
-        return this._repository.findByIdAndUpdate(
-            { _id: userIdToUnFollow },
-            { $pull: { followers: userId } },
-            { new: true }
-        );
+        return findUsersQuery;
     }
 }

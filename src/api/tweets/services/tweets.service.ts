@@ -63,7 +63,7 @@ export class TweetsService {
 
     public async findTweetsByFollowing(principal: Principal, skip: number, limit: number): Promise<DocumentTweet[]> {
         try {
-            const authorsIds: Types.ObjectId[] = (await this._usersService.getFollowingUsersByUserId(principal.details._id))
+            const authorsIds: Types.ObjectId[] = (await this._usersService.findFollows(principal.details._id, principal))
                 .map((user: DocumentUser) => user._id);
             return this._tweetsRepository.findTweetsByAuthorsIds(authorsIds, principal, skip, limit);
         } catch (error) {
@@ -79,13 +79,13 @@ export class TweetsService {
         }
     }
 
-    public async findLikesUsersByTweetId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
+    public async findLikersByTweetId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
         const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
         }
         try {
-            return this._tweetsRepository.findLikesUsersByTweetId(tweet.likes as Types.ObjectId[], principal, skip, limit);
+            return this._tweetsRepository.findLikersByTweetId(tweet.likes as Types.ObjectId[], principal, skip, limit);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }

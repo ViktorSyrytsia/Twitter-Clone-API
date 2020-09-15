@@ -7,7 +7,7 @@ export class DatabaseConnection extends Connection {
             {
                 user: process.env.MONGO_USER,
                 pass: process.env.MONGO_PASSWORD,
-                dbName: 'test_db',
+                dbName: 'jsp_twitter',
                 useUnifiedTopology: true,
                 useNewUrlParser: true,
                 useFindAndModify: false
