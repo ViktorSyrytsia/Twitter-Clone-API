@@ -6,7 +6,7 @@
   "scripts": {
     "start:watch": "nodemon",
     "start:prod": "npm run build && node build/src/index.js",
-    "build": "tsc",
+    "build": "tsc && cp -R src/api/auth/email-templates build/src/api/auth/",
     "lint": "tslint -c tslint.json -p tsconfig.json",
     "lint:fix": "tslint -c tslint.json -p tsconfig.json --fix"
   },

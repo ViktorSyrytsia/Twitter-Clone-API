@@ -70,11 +70,9 @@ export class MailService {
                         cid: 'logo'
                     },
                 ]
-
             });
         } catch (error) {
-            // throw new HttpError(INTERNAL_SERVER_ERROR, 'Template render error');
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+            throw new HttpError(INTERNAL_SERVER_ERROR, 'Template render error');
         }
     }
 }
