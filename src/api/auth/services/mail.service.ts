@@ -5,6 +5,7 @@ import { injectable } from 'inversify';
 
 import { HttpError } from '../../../shared/models/http.error';
 import { EmailTemplatesEnum } from '../enums/email-templates.enum';
+import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
 
 @injectable()
 export class MailService {
@@ -31,11 +32,13 @@ export class MailService {
 
     public sendConfirmMail(
         email: string,
+        firstName: string,
         token: string
     ): Promise<void> {
         return this._sendEmail(
             email,
-            'Confirm email',
+            firstName,
+            'Confirm your email',
             token,
             EmailTemplatesEnum.ConfirmEmail
         );
@@ -43,6 +46,7 @@ export class MailService {
 
     private async _sendEmail(
         email: string,
+        firstName: string,
         subject: string,
         token: string,
         template: EmailTemplatesEnum
@@ -50,6 +54,7 @@ export class MailService {
         try {
             const frontendUrl: string = process.env.FRONTEND_URL,
                 html: string = await this._emailTemplates.render(template, {
+                    firstName,
                     token,
                     frontendUrl
                 });
@@ -57,10 +62,18 @@ export class MailService {
                 from: `noreply<${process.env.ROOT_EMAIL}>`,
                 to: email,
                 subject: subject,
-                html
+                html,
+                attachments: [
+                    {
+                        path: path.resolve(__dirname, '../', 'email-templates/', 'assets/', 'logo.png'),
+                        filename: 'logo.png',
+                        cid: 'logo'
+                    },
+                ]
+
             });
         } catch (error) {
-            throw new HttpError(500, 'Template render error');
+            throw new HttpError(INTERNAL_SERVER_ERROR, 'Template render error');
         }
     }
 }

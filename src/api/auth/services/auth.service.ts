@@ -175,7 +175,7 @@ export class AuthService {
             const decrypted: { userId: Types.ObjectId } = verify(refreshToken, process.env.JWT_REFRESH_SECRET) as { userId: Types.ObjectId };
             userId = decrypted.userId;
         } catch (error) {
-                throw new HttpError(FORBIDDEN, 'Refresh token is broken or expired');
+            throw new HttpError(FORBIDDEN, 'Refresh token is broken or expired');
         };
 
         try {

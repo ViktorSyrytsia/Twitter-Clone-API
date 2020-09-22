@@ -1,23 +1,65 @@
 doctype html
-html
-    head
-        style(type="text/css").
-            .header {
-                font-size: 14px;
-            }
-
-            .footer {
-                font-size: 10px;
-            }
-    body
-        div.header
-            | Hello
-            br
-            | To confirm email press the link below
-            br
-            a(href=frontendUrl + `/confirm-email/` + token) link
-
-        div.footer
-            | Welcome to the Twitter app
-            br
-            a(href=frontendUrl) Our Website
+head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0')
+    meta(http-equiv='X-UA-Compatible' content='ie=edge')
+    title Confirm your email
+    link(rel='stylesheet' href='https://fonts.googleapis.com/css?family=Hind%20Siliguri:300,400,500,700&display=swap')
+    link(rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap')
+table(border='0' cellpadding='0' cellspacing='0' style='max-width:600px; width:100%; margin:0; padding:0;')
+    tbody
+        tr
+            td
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0;')
+                    tr
+                        td
+                            img(style='max-width:136px; display:block' border='0' width='100%' height='auto' src='./../assets/logo.png' alt='JSP logo')
+            td
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width: 100%')
+                    tbody(style='vertical-align: top')
+                        tr
+                            td(style='text-align: right;font-size:0;')
+                                span(style="font: 15px 'Hind Siliguri', sans-serif; line-height: 15px; font-weight: 700;") Made by
+                                br
+                                span(style="font: 25px 'Hind Siliguri', sans-serif; font-weight:700; color: #F57C1F; line-height: 23px;") JET
+                                span(style="font: 25px 'Hind Siliguri', sans-serif; font-weight:700; line-height: 23px;")
+                                    | SOFT
+                                    sup(style='font-size: 13px') PRO
+        tr
+            td(colspan='2')
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width:100%')
+                    tr
+                        td
+                            h3(style="text-align: center; margin-top: 60px; font: 18px 'Hind Siliguri', sans-serif; font-weight: 700")
+                                | Hi, #{firstName}
+        tr
+            td(colspan='2')
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0')
+                    tr
+                        td(style='text-align: center')
+                            span(style="font: 16px 'Hind Siliguri', sans-serif; margin-bottom: 30px; display: block")
+                                | Thanks so much for joining
+                                b
+                                    span(style='color: #F57C1F') JSP
+                                    |  Twitter
+                                | ! To finish signing up, you just need to confirm that we got your email right.
+        tr
+            td(colspan='2' style='text-align: center')
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width:100%')
+                    tr
+                        td(style='text-align: center; width: 100%')
+                            a(target='_blank' href='href=${frontendUrl}/confirmEmail/${token}' style='font: 16px Roboto, sans-serif; -webkit-text-size-adjust:none;\
+              color:#FFFFFF; text-decoration:none; background:#478ECC; min-height:40px;\
+              width:50%; display: inline-block; border-radius:5px;\
+              box-shadow: 0px 3px 1px rgba(0, 0, 0, 0.25); line-height: 39px;') CONFIRM YOUR EMAIL
+        tr
+            td(colspan='2')
+                table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width: 100%')
+                    tr
+                        td(style='text-align: center')
+                            div(style='margin-top: 50px')
+                                span(style="font: 16px 'Hind Siliguri', sans-serif")
+                                    b Button not working?
+                                    |  Try pasting this link into your browser:
+                                br
+                                span(style="font: 13px 'Roboto', sans-serif; color: #2B74B9") #{frontendUrl}/confirmEmail/#{token}

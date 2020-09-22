@@ -121,7 +121,11 @@ export class UsersService {
         try {
             if (user.email && !await this._usersRepository.findByEmail(user.email)) {
                 const confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(user._id);
-                await this._mailService.sendConfirmMail(user.email, confirmEmailToken.tokenBody);
+                await this._mailService.sendConfirmMail(
+                    user.email,
+                    (user.firstName || principal.details.firstName),
+                    confirmEmailToken.tokenBody
+                );
             }
             return this._usersRepository.updateUser(user, principal);
         } catch (error) {
