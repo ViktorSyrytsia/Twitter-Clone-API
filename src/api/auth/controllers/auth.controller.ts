@@ -1,4 +1,4 @@
-import { controller, httpPost, request, requestBody, response, requestParam, httpGet, principal } from 'inversify-express-utils';
+import { controller, httpPost, request, requestBody, response, requestParam, principal, requestHeaders, httpGet } from 'inversify-express-utils';
 import { Request, Response } from 'express';
 import { ApiPath, ApiOperationPost, ApiOperationGet } from 'swagger-express-typescript';
 
@@ -133,7 +133,7 @@ export class AuthController extends ControllerBase {
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt token'
+                description: 'Returns user with jwt tokens'
             },
             417: {
                 model: 'HttpError',
@@ -159,7 +159,7 @@ export class AuthController extends ControllerBase {
         }
     }
 
-    @ApiOperationGet({
+    @ApiOperationPost({
         summary: 'Email verification',
         path: '/confirm-email/{token}',
         parameters: {
@@ -174,7 +174,7 @@ export class AuthController extends ControllerBase {
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt token'
+                description: 'Returns user with jwt tokens'
             },
             417: {
                 model: 'HttpError',
@@ -182,7 +182,7 @@ export class AuthController extends ControllerBase {
             }
         }
     })
-    @httpGet('/confirm-email/:token')
+    @httpPost('/confirm-email/:token')
     public async confirmEmail(
         @requestParam('token') token: string,
         @request() req: Request,
@@ -196,13 +196,18 @@ export class AuthController extends ControllerBase {
         }
     }
 
-    @ApiOperationGet({
+    @ApiOperationPost({
+        parameters: {},
         summary: 'Resend verification link',
         path: '/resend-confirm-email',
         description: 'In case if original link expires (5m lifetime)',
         responses: {
             200: {
                 description: 'Sends new verification link to user\'s email'
+            },
+            401: {
+                model: 'HttpError',
+                description: 'Unauthorized'
             },
             404: {
                 model: 'HttpError',
@@ -214,7 +219,7 @@ export class AuthController extends ControllerBase {
             }
         }
     })
-    @httpGet('/resend-confirm-email', AuthMiddleware)
+    @httpPost('/resend-confirm-email', AuthMiddleware)
     public async resendConfirmEmail(
         @principal() principal: Principal,
         @request() req: Request,
@@ -223,6 +228,35 @@ export class AuthController extends ControllerBase {
         try {
             await this._authService.resendConfirmEmail(principal);
             return this._success(res, 200);
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationGet({
+        summary: 'Refresh access token',
+        path: '/refresh-access-token',
+        description: 'x-refresh-token header is required',
+        responses: {
+            200: {
+                model: 'UserWithToken',
+                description: 'Returns user with jwt tokens'
+            },
+            403: {
+                model: 'HttpError',
+                description: 'Refresh token is broken or expired'
+            }
+        }
+    })
+    @httpGet('/refresh-access-token')
+    public async refreshAccessToken(
+        @request() req: Request,
+        @response() res: Response,
+        @requestHeaders('x-refresh-token') refreshToken: string,
+    ): Promise<Response> {
+        try {
+            const userWithToken: UserWithToken = await this._authService.refreshAccessToken(refreshToken);
+            return this._success(res, 200, userWithToken);
         } catch (error) {
             return this._fail(res, error);
         }

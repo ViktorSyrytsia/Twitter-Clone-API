@@ -40,6 +40,11 @@ export class App {
               in: SwaggerDefinitionConstant.Security.In.HEADER,
               name: 'x-auth-token',
             },
+            apiRefreshKeyHeader: {
+              type: SwaggerDefinitionConstant.Security.Type.API_KEY,
+              in: SwaggerDefinitionConstant.Security.In.HEADER,
+              name: 'x-refresh-token',
+            },
           },
         },
       })

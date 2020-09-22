@@ -127,7 +127,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const user: DocumentUser = await this._userService.findCurrentUser(principal);
+            const user: DocumentUser = await this._userService.findById(principal.details._id);
             return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
             return this._fail(
@@ -138,7 +138,7 @@ export class UsersController extends ControllerBase {
     }
 
     @ApiOperationPut({
-        description: 'Update currently logged user',
+        description: 'Update currently logged user (can change: avatar, firstName, lastName, username, email)',
         summary: 'Update current user',
         path: '/current',
         parameters: {
@@ -150,7 +150,7 @@ export class UsersController extends ControllerBase {
         },
         responses: {
             200: {
-                description: 'Returns updated user',
+                description: 'Returns updated user, sends verification link to new email if email was changed',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
@@ -408,7 +408,7 @@ export class UsersController extends ControllerBase {
             apiKeyHeader: [],
         },
     })
-    @httpPut('/follows/:id', AuthMiddleware, ActivatedUserMiddleware)
+    @httpPut('/follow/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async followUser(
         @requestParam('id') id: string,
         @principal() principal: Principal,
@@ -516,7 +516,7 @@ export class UsersController extends ControllerBase {
         @principal() principal: Principal,
     ): Promise<Response> {
         try {
-            const user: DocumentUser = await this._userService.findUserById(new Types.ObjectId(id), principal);
+            const user: DocumentUser = await this._userService.findById(new Types.ObjectId(id), principal);
             return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
             return this._fail(res, error);

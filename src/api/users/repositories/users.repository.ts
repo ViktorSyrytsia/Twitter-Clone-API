@@ -12,7 +12,7 @@ import { Principal } from '../../auth/models/principal.model';
 export class UsersRepository extends RepositoryBase<User> {
     protected _repository: ReturnModelType<typeof User>;
 
-    private _selectFields: string = '_id username firstName lastName avatar followers email active';
+    private _selectFields: string = '_id username firstName lastName avatar followers active';
 
     constructor(
         private _databaseConnection: DatabaseConnection
@@ -107,18 +107,20 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._addFields(newUser, principal);
     }
 
-    public async updateUser(user: User, principal?: Principal): Promise<DocumentUser> {
+    public async updateUser(user: User, principal: Principal): Promise<DocumentUser> {
+        const oldUser: DocumentUser = await this._repository
+            .findById(principal.details._id);
         const updatedUser: DocumentUser = await this._repository
             .findByIdAndUpdate(
                 principal.details._id,
                 {
                     $set: {
-                        avatar: user.avatar,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        username: user.username,
-                        email: user.email,
-                        active: user.email === principal.details.email,
+                        avatar: (user.avatar || oldUser.avatar),
+                        firstName: (user.firstName || oldUser.firstName),
+                        lastName: (user.lastName || oldUser.lastName),
+                        username: (user.username || oldUser.username),
+                        email: (user.email || oldUser.email),
+                        active: (user.email ? (user.email === oldUser.email) : true),
                         lastUpdated: Date.now()
                     }
                 },
@@ -126,7 +128,7 @@ export class UsersRepository extends RepositoryBase<User> {
             )
             .select(this._selectFields)
             .lean();
-        return this._addFields(updatedUser, principal);
+        return this._addFields(updatedUser);
     }
 
     public async activateUser(userId: Types.ObjectId, principal?: Principal): Promise<DocumentUser> {
@@ -137,12 +139,11 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._addFields(user, principal);
     }
 
-    public async deleteUser(principal): Promise<DocumentUser> {
+    public async deleteUser(principal: Principal): Promise<DocumentUser> {
         const user: DocumentUser = await this._repository
             .findByIdAndDelete(principal.details._id)
-            .select(this._selectFields)
             .lean();
-        return this._addFields(user, principal);
+        return user;
     }
 
     public async followUser(userIdToFollow: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
@@ -184,7 +185,7 @@ export class UsersRepository extends RepositoryBase<User> {
         skip?: number,
         limit?: number
     ): Promise<DocumentUser[]> {
-        const followerIds = (await this.findById(userId)).followers,
+        const followerIds = (await this._repository.findById(userId)).followers,
             findUsersQuery: DocumentQuery<DocumentUser[], DocumentUser> = this._repository
                 .find({ _id: { $in: followerIds } });
         return this._addLazyLoadAndModify(findUsersQuery, principal, skip, limit);
@@ -209,13 +210,13 @@ export class UsersRepository extends RepositoryBase<User> {
             return null;
         }
 
-        if (principal && await principal.isAuthenticated() && user.email !== principal.details.email) {
-            user.isFollower = (await this.findById(principal.details._id)).followers.includes(user._id);
-            user.isFollowed = (await this.findById(user._id)).followers.includes(principal.details._id);
+        if (principal && await principal.isAuthenticated() && !user._id.equals(principal.details._id)) {
+            user.isFollower = (await this._repository.findById(principal.details._id)).followers.includes(user._id);
+            user.isFollowed = (await this._repository.findById(user._id)).followers.includes(principal.details._id);
         }
 
         user.followersCount = user.followers.length;
-        user.followingCount = await this._repository.count({ followers: { $elemMatch: { $eq: user._id } } });
+        user.followingCount = await this._repository.countDocuments({ followers: { $elemMatch: { $eq: user._id } } });
 
         delete user.followers;
 

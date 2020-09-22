@@ -137,7 +137,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         }
 
         comment.likesCount = comment.likes.length;
-        comment.repliesCount = await this._repository.count({ repliedComment: comment._id });
+        comment.repliesCount = await this._repository.countDocuments({ repliedComment: comment._id });
         comment.likes = await this._usersService.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
         comment.replies = [];
 

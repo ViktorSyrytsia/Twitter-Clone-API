@@ -77,22 +77,6 @@ export class UsersService {
         }
     }
 
-    public async findCurrentUser(principal: Principal): Promise<DocumentUser> {
-        try {
-            return this._usersRepository.findById(principal.details._id, principal);
-        } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
-        }
-    }
-
-    public async findUserById(userId: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
-        try {
-            return this._usersRepository.findById(userId, principal);
-        } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
-        }
-    }
-
     public async findUsersByUserIds(
         userIds: Types.ObjectId[],
         principal: Principal,
@@ -107,11 +91,6 @@ export class UsersService {
     }
 
     public async deleteUserById(principal: Principal): Promise<void> {
-        const user: DocumentUser = await this.findById(principal.details._id);
-        if (user == null) {
-            throw new HttpError(NOT_FOUND, 'User not found');
-        }
-
         try {
             await this._usersRepository.deleteUser(principal);
         } catch (error) {
@@ -120,34 +99,33 @@ export class UsersService {
     }
 
     public async updateUser(user: User, principal: Principal): Promise<DocumentUser> {
-        if (user._id !== principal.details._id) {
-            throw new HttpError(UNAUTHORIZED, 'Unauthorized');
-        }
-
-        const emailRegExp: RegExp = new RegExp(
-            /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/ // https://regex101.com/library/mX1xW0
-        );
-        if (emailRegExp.test(user.email) === false) {
-            throw new HttpError(UNPROCESSABLE_ENTITY, 'Wrong email format');
+        if (user.email) {
+            const emailRegExp: RegExp = new RegExp(
+                /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/ // https://regex101.com/library/mX1xW0
+            );
+            if (!emailRegExp.test(user.email)) {
+                throw new HttpError(UNPROCESSABLE_ENTITY, 'Wrong email format');
+            }
         }
 
         let existingUser: DocumentUser = await this.findByUsername(user.username);
-        if (existingUser) {
+        if (existingUser && !existingUser._id.equals(principal.details._id)) {
             throw new HttpError(CONFLICT, 'This username already exists');
         }
 
         existingUser = await this.findByEmail(user.email);
-        if (existingUser) {
+        if (existingUser && !existingUser._id.equals(principal.details._id)) {
             throw new HttpError(CONFLICT, 'This email already exists');
         }
 
         try {
-            if (user.email !== principal.details.email) {
+            if (user.email && !await this._usersRepository.findByEmail(user.email)) {
                 const confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(user._id);
                 await this._mailService.sendConfirmMail(user.email, confirmEmailToken.tokenBody);
             }
             return this._usersRepository.updateUser(user, principal);
         } catch (error) {
+            console.log(error)
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
@@ -164,11 +142,8 @@ export class UsersService {
         if (!userIdToFollow) {
             throw new HttpError(BAD_REQUEST, 'User id is missing');
         }
-        if (!await this.findById(userIdToFollow)) {
+        if (!await this._usersRepository.findById(userIdToFollow)) {
             throw new HttpError(NOT_FOUND, 'User not found');
-        }
-        if ((await this.findById(userIdToFollow)).followers.includes(principal.details._id)) {
-            throw new HttpError(CONFLICT, 'Already following');
         }
 
         try {
@@ -184,9 +159,6 @@ export class UsersService {
         }
         if (!await this.findById(userIdToUnfollow)) {
             throw new HttpError(NOT_FOUND, 'User not found');
-        }
-        if (!(await this.findById(userIdToUnfollow)).followers.includes(principal.details._id)) {
-            throw new HttpError(CONFLICT, 'Already not following');
         }
 
         try {

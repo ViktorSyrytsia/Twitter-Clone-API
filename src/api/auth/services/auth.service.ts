@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
-import { sign, verify } from 'jsonwebtoken';
+import { decode, sign, verify } from 'jsonwebtoken';
 import { compare, hash } from 'bcrypt';
-import { CONFLICT, EXPECTATION_FAILED, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY } from 'http-status-codes';
+import { CONFLICT, EXPECTATION_FAILED, FORBIDDEN, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 
 import { DocumentUser, User } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
@@ -14,6 +14,7 @@ import { TokenType } from '../enums/token.enum';
 import { SignInCredentials } from '../interfaces/sign-in-credentials.interface';
 import { SignUpCredentials } from '../interfaces/sign-up-credentials.interface';
 import { Principal } from '../models/principal.model';
+import { Types } from 'mongoose';
 
 
 @injectable()
@@ -23,6 +24,9 @@ export class AuthService {
         private _tokenService: TokenService,
         private _mailService: MailService
     ) {}
+
+    private _accessTokenExpiresIn: string = '3h';
+    private _refreshTokenExpiresIn: string = '7d';
 
     public async getUserFromToken(token: string): Promise<DocumentUser> {
         try {
@@ -88,7 +92,8 @@ export class AuthService {
             const documentUser: DocumentUser = await this._usersService.createUser(newUser),
                 confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(documentUser._id);
             await this._mailService.sendConfirmMail(
-                credentials.email, confirmEmailToken.tokenBody
+                credentials.email,
+                confirmEmailToken.tokenBody
             );
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
@@ -103,16 +108,13 @@ export class AuthService {
 
         try {
             const userId: any = documentToken.userId,
-                documentUser: DocumentUser = await this._usersService.activateUser(userId);
-            const jwtToken = sign({
-                    userId: documentUser._id
-                },
-                process.env.JWT_SECRET, {
-                    expiresIn: '3h'
-                }
-            );
+                documentUser: DocumentUser = await this._usersService.activateUser(userId),
+                accessToken: string = this._generateAccessToken(userId),
+                refreshToken: string = this._generateRefreshToken(userId);
+
             await this._tokenService.deleteToken(documentToken._id);
-            return new UserWithToken(documentUser, jwtToken);
+
+            return new UserWithToken(documentUser, accessToken, refreshToken);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -128,22 +130,22 @@ export class AuthService {
             throw new HttpError(UNPROCESSABLE_ENTITY, 'Wrong json');
         }
 
-        const documentUser: DocumentUser = await this._usersService.findUserByEmailOrUsername(credentials.emailOrUsername),
-            passwordCompare: boolean = await compare(credentials.password, documentUser.password);
-        if (!documentUser || !passwordCompare) {
+        const documentUser: DocumentUser = await this._usersService.findUserByEmailOrUsername(credentials.emailOrUsername);
+        if (!documentUser) {
+            throw new HttpError(EXPECTATION_FAILED, 'User doesn\'t exist or password doesn\'t match');
+        }
+        const passwordCompare: boolean = await compare(credentials.password, documentUser.password);
+        if (!passwordCompare) {
             throw new HttpError(EXPECTATION_FAILED, 'User doesn\'t exist or password doesn\'t match');
         }
 
         try {
-            const jwtToken = sign({
-                    userId: documentUser._id
-                },
-                process.env.JWT_SECRET, {
-                    expiresIn: '3h'
-                }
-            );
+            const accessToken = this._generateAccessToken( documentUser._id),
+                refreshToken = this._generateRefreshToken( documentUser._id);
             delete documentUser.password;
-            return new UserWithToken(documentUser, jwtToken);
+            delete documentUser.email;
+
+            return new UserWithToken(documentUser, accessToken, refreshToken);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -158,9 +160,52 @@ export class AuthService {
         try {
             await this._tokenService.deleteTokenByUserId(principal.details._id);
             const confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(principal.details._id);
-            await this._mailService.sendConfirmMail(principal.details.email, confirmEmailToken.tokenBody);
+            await this._mailService.sendConfirmMail(
+                principal.details.email,
+                confirmEmailToken.tokenBody
+            );
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
+    }
+
+    public async refreshAccessToken(refreshToken: string): Promise<UserWithToken> {
+        let userId: Types.ObjectId;
+        try {
+            const decrypted: { userId: Types.ObjectId } = verify(refreshToken, process.env.JWT_REFRESH_SECRET) as { userId: Types.ObjectId };
+            userId = decrypted.userId;
+        } catch (error) {
+                throw new HttpError(FORBIDDEN, 'Refresh token is broken or expired');
+        };
+
+        try {
+            return {
+                user: await this._usersService.findById(userId),
+                accessToken: this._generateAccessToken(userId),
+                refreshToken: this._generateRefreshToken(userId)
+            }
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    private _generateAccessToken(userId: Types.ObjectId): string {
+        return sign({
+                userId: userId
+            },
+            process.env.JWT_SECRET, {
+                expiresIn: this._accessTokenExpiresIn
+            }
+        );
+    }
+
+    private _generateRefreshToken(userId: Types.ObjectId): string {
+        return sign({
+                userId: userId
+            },
+            process.env.JWT_REFRESH_SECRET, {
+                expiresIn: this._refreshTokenExpiresIn
+            }
+        );
     }
 }
