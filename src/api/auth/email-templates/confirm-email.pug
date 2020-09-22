@@ -13,7 +13,7 @@ table(border='0' cellpadding='0' cellspacing='0' style='max-width:600px; width:1
                 table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0;')
                     tr
                         td
-                            img(style='max-width:136px; display:block' border='0' width='100%' height='auto' src='./../assets/logo.png' alt='JSP logo')
+                            img(style='max-width:136px; display:block' border='0' width='100%' height='auto' src='cid:log' alt='JSP logo')
             td
                 table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width: 100%')
                     tbody(style='vertical-align: top')
@@ -31,7 +31,7 @@ table(border='0' cellpadding='0' cellspacing='0' style='max-width:600px; width:1
                     tr
                         td
                             h3(style="text-align: center; margin-top: 60px; font: 18px 'Hind Siliguri', sans-serif; font-weight: 700")
-                                | Hi, #{firstName}
+                                | Hi, #{firstName}!
         tr
             td(colspan='2')
                 table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0')
@@ -48,7 +48,7 @@ table(border='0' cellpadding='0' cellspacing='0' style='max-width:600px; width:1
                 table(border='0' cellpadding='0' cellspacing='0' style='margin:0; padding:0; width:100%')
                     tr
                         td(style='text-align: center; width: 100%')
-                            a(target='_blank' href='href=${frontendUrl}/confirmEmail/${token}' style='font: 16px Roboto, sans-serif; -webkit-text-size-adjust:none;\
+                            a(target='_blank' href=`${frontendUrl}/confirmEmail/${token}` style='font: 16px Roboto, sans-serif; -webkit-text-size-adjust:none;\
               color:#FFFFFF; text-decoration:none; background:#478ECC; min-height:40px;\
               width:50%; display: inline-block; border-radius:5px;\
               box-shadow: 0px 3px 1px rgba(0, 0, 0, 0.25); line-height: 39px;') CONFIRM YOUR EMAIL

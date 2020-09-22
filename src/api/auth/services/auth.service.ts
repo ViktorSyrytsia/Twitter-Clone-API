@@ -93,6 +93,7 @@ export class AuthService {
                 confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(documentUser._id);
             await this._mailService.sendConfirmMail(
                 credentials.email,
+                credentials.firstName,
                 confirmEmailToken.tokenBody
             );
         } catch (error) {
@@ -162,6 +163,7 @@ export class AuthService {
             const confirmEmailToken: DocumentToken = await this._tokenService.createConfirmPasswordToken(principal.details._id);
             await this._mailService.sendConfirmMail(
                 principal.details.email,
+                principal.details.firstName,
                 confirmEmailToken.tokenBody
             );
         } catch (error) {
