@@ -41,11 +41,11 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
     }
 
     public async deleteTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
-        const comments: DocumentComment[] = await this._commentService.findCommentsByTweet(id, principal);
-
-        for (const comment of comments) {
-            await this._commentService.deleteComment(principal, comment._id);
-        }
+        // const comments: DocumentComment[] = await this._commentService.findCommentsByTweet(id, principal);
+        //
+        // for (const comment of comments) {
+        //     await this._commentService.deleteComment(principal, comment._id);
+        // }
 
         const tweet: DocumentTweet = await this._repository
             .findByIdAndDelete(id)
@@ -53,7 +53,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         return this._addFields(tweet, principal);
     }
 
-    public async findById(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
+    public async findById(id: Types.ObjectId, principal?: Principal): Promise<DocumentTweet> {
         const tweet: DocumentTweet = await this._repository
             .findById(id)
             .lean();
@@ -130,7 +130,7 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
         tweet.likesCount = tweet.likes.length;
         tweet.retweetsCount = await this._repository.countDocuments({ retweetedTweet: tweet._id });
         tweet.likes = await this._usersService.findUsersByUserIds(tweet.likes as Types.ObjectId[], principal, 0, 5);
-        tweet.commentsCount = await this._commentService.countCommentsByTweet(tweet._id, principal);
+        tweet.commentsCount = await this._commentService.countCommentsByTweet(tweet._id);
         tweet.author = await this._usersService.findById(tweet.author as Types.ObjectId);
 
         if (tweet.retweetedTweet) {

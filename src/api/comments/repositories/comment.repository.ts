@@ -11,8 +11,10 @@ import { UsersService } from '../../users/services/users.service';
 export class CommentRepository extends RepositoryBase<Comment> {
     protected _repository: ReturnModelType<typeof Comment>;
 
-    constructor(private _databaseConnection: DatabaseConnection,
-                private _usersService: UsersService) {
+    constructor(
+        private _databaseConnection: DatabaseConnection,
+        private _usersService: UsersService
+    ) {
         super();
         this.initRepository(this._databaseConnection, Comment);
     }
@@ -75,11 +77,11 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._addFields(comment, principal);
     }
 
-    public async deleteComment(commentId: Types.ObjectId, principal: Principal): Promise<DocumentComment> {
+    public async deleteComment(commentId: Types.ObjectId, principal?: Principal): Promise<DocumentComment> {
         const replies: DocumentComment[] = await this._repository.find({ repliedComment: commentId });
 
         for (const reply of replies) {
-            await this.deleteComment(reply._id, principal);
+            await this.deleteComment(reply._id);
         }
 
         const comment: DocumentComment = await this._repository

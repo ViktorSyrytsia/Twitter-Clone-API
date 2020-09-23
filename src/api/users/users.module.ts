@@ -5,7 +5,7 @@ import { UsersRepository } from './repositories/users.repository';
 import { UsersService } from './services/users.service';
 
 export const UsersModule = new ContainerModule((bind: interfaces.Bind) => {
-    bind(UsersRepository).to(UsersRepository);
-    bind(UsersService).to(UsersService);
-    bind(UsersController).to(UsersController);
+    bind(UsersRepository).toAutoFactory(UsersRepository);
+    bind(UsersService).toAutoFactory(UsersService);
+    bind(UsersController).toAutoFactory(UsersController);
 });

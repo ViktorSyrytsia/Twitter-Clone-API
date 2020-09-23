@@ -1,9 +1,6 @@
 import { injectable } from 'inversify';
 import { Types } from 'mongoose';
-import {
-    BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, UNAUTHORIZED, UNPROCESSABLE_ENTITY
-} from 'http-status-codes';
-
+import { BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 import { UsersRepository } from '../repositories/users.repository';
 import { DocumentUser, User } from '../models/user.model';
 import { Principal } from '../../auth/models/principal.model';
@@ -53,9 +50,9 @@ export class UsersService {
         }
     }
 
-    public async findUserByEmailOrUsername(emailOrUsername: string, principal?: Principal): Promise<DocumentUser> {
+    public async findUserByEmailOrUsername(emailOrUsername: string): Promise<DocumentUser> {
         try {
-            return this._usersRepository.findUserByEmailOrUsername(emailOrUsername, principal);
+            return this._usersRepository.findUserByEmailOrUsername(emailOrUsername);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -64,6 +61,14 @@ export class UsersService {
     public async createUser(user: User, principal?: Principal): Promise<DocumentUser> {
         try {
             return this._usersRepository.createUser(user, principal);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    public async findPrincipalById(userId: Types.ObjectId): Promise<DocumentUser> {
+        try {
+            return this._usersRepository.findPrincipalById(userId);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
@@ -90,7 +95,7 @@ export class UsersService {
         }
     }
 
-    public async deleteUserById(principal: Principal): Promise<void> {
+    public async deleteUserByPrincipal(principal: Principal): Promise<void> {
         try {
             await this._usersRepository.deleteUser(principal);
         } catch (error) {
@@ -129,7 +134,6 @@ export class UsersService {
             }
             return this._usersRepository.updateUser(user, principal);
         } catch (error) {
-            console.log(error)
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
@@ -143,9 +147,6 @@ export class UsersService {
     }
 
     public async followUser(userIdToFollow: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
-        if (!userIdToFollow) {
-            throw new HttpError(BAD_REQUEST, 'User id is missing');
-        }
         if (!await this._usersRepository.findById(userIdToFollow)) {
             throw new HttpError(NOT_FOUND, 'User not found');
         }
@@ -158,9 +159,6 @@ export class UsersService {
     }
 
     public async unfollowUser(userIdToUnfollow: Types.ObjectId, principal: Principal): Promise<DocumentUser> {
-        if (!userIdToUnfollow) {
-            throw new HttpError(BAD_REQUEST, 'User id is missing');
-        }
         if (!await this.findById(userIdToUnfollow)) {
             throw new HttpError(NOT_FOUND, 'User not found');
         }

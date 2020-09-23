@@ -12,7 +12,7 @@ import { Principal } from '../../auth/models/principal.model';
 export class UsersRepository extends RepositoryBase<User> {
     protected _repository: ReturnModelType<typeof User>;
 
-    private _selectFields: string = '_id username firstName lastName avatar followers active';
+    private _selectFields: string = '_id username firstName lastName avatar followers';
 
     constructor(
         private _databaseConnection: DatabaseConnection
@@ -27,6 +27,14 @@ export class UsersRepository extends RepositoryBase<User> {
             .select(this._selectFields)
             .lean();
         return this._addFields(user, principal);
+    }
+
+    public async findPrincipalById(userId: Types.ObjectId): Promise<DocumentUser> {
+        const user: DocumentUser = await this._repository
+            .findById(userId)
+            .select('-password')
+            .lean();
+        return this._addFields(user);
     }
 
     public async findAll(
@@ -55,13 +63,13 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._addFields(user, principal);
     }
 
-    public async findUserByEmailOrUsername(emailOrUsername: string, principal?: Principal): Promise<DocumentUser> {
+    public async findUserByEmailOrUsername(emailOrUsername: string): Promise<DocumentUser> {
         const user: DocumentUser = await this._repository
             .findOne({
                 $or: [{ username: emailOrUsername }, { email: emailOrUsername }]
             })
             .lean();
-        return this._addFields(user, principal);
+        return this._addFields(user);
     }
 
     public async findBySearch(
@@ -126,17 +134,17 @@ export class UsersRepository extends RepositoryBase<User> {
                 },
                 { new: true }
             )
-            .select(this._selectFields)
+            .select('-password')
             .lean();
         return this._addFields(updatedUser);
     }
 
-    public async activateUser(userId: Types.ObjectId, principal?: Principal): Promise<DocumentUser> {
+    public async activateUser(userId: Types.ObjectId): Promise<DocumentUser> {
         const user: DocumentUser = await this._repository
             .findByIdAndUpdate(userId, { $set: { active: true } }, { new: true })
-            .select(this._selectFields)
+            .select('-password')
             .lean();
-        return this._addFields(user, principal);
+        return this._addFields(user);
     }
 
     public async deleteUser(principal: Principal): Promise<DocumentUser> {

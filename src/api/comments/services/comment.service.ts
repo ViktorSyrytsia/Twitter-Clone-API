@@ -1,10 +1,11 @@
 import { injectable } from 'inversify';
+import { Types } from 'mongoose';
+import { FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } from 'http-status-codes';
+
 import { CommentRepository } from '../repositories/comment.repository';
 import { Comment, DocumentComment } from '../models/comment.model';
-import { Types } from 'mongoose';
 import { Principal } from '../../auth/models/principal.model';
 import { HttpError } from '../../../shared/models/http.error';
-import { FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 import { TweetsService } from '../../tweets/services/tweets.service';
 import { DocumentTweet } from '../../tweets/models/tweet.model';
 import { DocumentUser } from '../../users/models/user.model';
@@ -12,9 +13,11 @@ import { UsersService } from '../../users/services/users.service';
 
 @injectable()
 export class CommentService {
-    constructor(private _commentRepository: CommentRepository,
-                private _tweetService: TweetsService,
-                private _usersService: UsersService) {
+    constructor(
+        private _commentRepository: CommentRepository,
+        private _tweetService: TweetsService,
+        private _usersService: UsersService
+    ) {
     }
 
     public async findById(id: Types.ObjectId, principal: Principal): Promise<DocumentComment> {
@@ -22,7 +25,7 @@ export class CommentService {
     }
 
     public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentComment[]> {
-        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -35,8 +38,8 @@ export class CommentService {
         }
     }
 
-    public async countCommentsByTweet(tweetId: Types.ObjectId, principal: Principal): Promise<Number> {
-        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
+    public async countCommentsByTweet(tweetId: Types.ObjectId): Promise<Number> {
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -64,7 +67,7 @@ export class CommentService {
     }
 
     public async createComment(text: string, principal: Principal, tweetId: Types.ObjectId): Promise<DocumentComment> {
-        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -81,7 +84,7 @@ export class CommentService {
     }
 
     public async updateComment(id: Types.ObjectId, text: string, principal: Principal): Promise<DocumentComment> {
-        const comment: DocumentComment = await this._commentRepository.findById(id, principal);
+        const comment: DocumentComment = await this._commentRepository.findById(id);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'Comment not found');
@@ -99,7 +102,7 @@ export class CommentService {
     }
 
     public async deleteComment(principal: Principal, id: Types.ObjectId): Promise<DocumentComment> {
-        const comment: DocumentComment = await this._commentRepository.findById(id, principal);
+        const comment: DocumentComment = await this._commentRepository.findById(id);
 
         if (!comment) {
             throw new HttpError(NOT_FOUND, 'Comment not found');

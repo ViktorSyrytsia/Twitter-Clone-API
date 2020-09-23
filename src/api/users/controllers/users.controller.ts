@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import {
     controller, httpDelete, httpGet, httpPut, principal, queryParam, request, requestBody, requestParam, response,
 } from 'inversify-express-utils';
-import { OK } from 'http-status-codes';
+import { BAD_REQUEST, OK } from 'http-status-codes';
 import {
     ApiOperationDelete, ApiOperationGet, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
@@ -14,6 +14,7 @@ import { UsersService } from '../services/users.service';
 import { DocumentUser, User } from '../models/user.model';
 import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
+import { HttpError } from '../../../shared/models/http.error';
 
 
 @ApiPath({
@@ -127,7 +128,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const user: DocumentUser = await this._userService.findById(principal.details._id);
+            const user: DocumentUser = await this._userService.findPrincipalById(principal.details._id);
             return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
             return this._fail(
@@ -223,7 +224,7 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            await this._userService.deleteUserById(principal);
+            await this._userService.deleteUserByPrincipal(principal);
             return this._success<{ user: DocumentUser }>(res, OK);
         } catch (error) {
             return this._fail(res, error);
@@ -415,6 +416,10 @@ export class UsersController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+        }
+
         try {
             await this._userService.followUser(new Types.ObjectId(id), principal);
             return this._success<{ user: DocumentUser }>(res, OK);
@@ -469,6 +474,10 @@ export class UsersController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+        }
+
         try {
             await this._userService.unfollowUser(new Types.ObjectId(id), principal);
             return this._success<{ user: DocumentUser }>(res, OK);

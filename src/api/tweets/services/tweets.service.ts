@@ -17,7 +17,7 @@ export class TweetsService {
     ) {
     }
 
-    public async findById(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
+    public async findById(id: Types.ObjectId, principal?: Principal): Promise<DocumentTweet> {
         try {
             return this._tweetsRepository.findById(id, principal);
         } catch (error) {
@@ -45,7 +45,7 @@ export class TweetsService {
     }
 
     public async findRetweetsByTweetId(id: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -59,7 +59,7 @@ export class TweetsService {
     }
 
     public async findLikersByTweetId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -87,7 +87,7 @@ export class TweetsService {
     }
 
     public async retweetTweet(text: string, principal: Principal, retweetId: Types.ObjectId): Promise<DocumentTweet> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(retweetId, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(retweetId);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -108,7 +108,7 @@ export class TweetsService {
     }
 
     public async updateTweet(text: string, principal: Principal, tweetId: Types.ObjectId): Promise<DocumentTweet> {
-        const tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweetId, principal);
+        const tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweetId);
 
         if (!tweetToUpdate) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -126,7 +126,7 @@ export class TweetsService {
     }
 
     public async deleteTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
@@ -145,7 +145,7 @@ export class TweetsService {
 
 
     public async likeTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Comment not found');
@@ -163,7 +163,7 @@ export class TweetsService {
     }
 
     public async unlikeTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
-        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id);
 
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Comment not found');

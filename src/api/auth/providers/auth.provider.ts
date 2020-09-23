@@ -18,7 +18,7 @@ export class AuthProvider implements interfaces.AuthProvider {
             return new Principal(null);
         }
         try {
-            const user = await this._authService.getUserFromToken(token);
+            const user = await this._authService.getPrincipalFromToken(token);
             return new Principal(user);
         } catch(error) {
             return new Principal(null);

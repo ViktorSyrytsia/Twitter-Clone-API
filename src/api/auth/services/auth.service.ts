@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { decode, sign, verify } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { compare, hash } from 'bcrypt';
 import { CONFLICT, EXPECTATION_FAILED, FORBIDDEN, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 
@@ -28,12 +28,10 @@ export class AuthService {
     private _accessTokenExpiresIn: string = '3h';
     private _refreshTokenExpiresIn: string = '7d';
 
-    public async getUserFromToken(token: string): Promise<DocumentUser> {
+    public async getPrincipalFromToken(token: string): Promise<DocumentUser> {
         try {
-            const decrypted: any = verify(
-                token, process.env.JWT_SECRET
-            );
-            return await this._usersService.findById(decrypted.userId);
+            const decrypted: any = verify(token, process.env.JWT_SECRET);
+            return this._usersService.findPrincipalById(decrypted.userId);
         } catch (error) {
             throw error;
         }
@@ -143,18 +141,19 @@ export class AuthService {
         try {
             const accessToken = this._generateAccessToken( documentUser._id),
                 refreshToken = this._generateRefreshToken( documentUser._id);
-            delete documentUser.password;
-            delete documentUser.email;
 
-            return new UserWithToken(documentUser, accessToken, refreshToken);
+            return new UserWithToken(
+                await this._usersService.findPrincipalById(documentUser._id),
+                accessToken,
+                refreshToken
+            );
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
     public async resendConfirmEmail(principal: Principal): Promise<void> {
-        const { active } = await this._usersService.findById(principal.details._id);
-        if (active) {
+        if (principal.details.active) {
             throw new HttpError(CONFLICT, 'User already activated');
         }
 
@@ -182,7 +181,7 @@ export class AuthService {
 
         try {
             return {
-                user: await this._usersService.findById(userId),
+                user: await this._usersService.findPrincipalById(userId),
                 accessToken: this._generateAccessToken(userId),
                 refreshToken: this._generateRefreshToken(userId)
             }
