@@ -1,9 +1,9 @@
-import {Base} from '@typegoose/typegoose/lib/defaultClasses';
-import {DocumentType, prop, Ref} from '@typegoose/typegoose';
-import {CreateQuery} from 'mongoose';
+import { Base } from '@typegoose/typegoose/lib/defaultClasses';
+import { DocumentType, prop, Ref } from '@typegoose/typegoose';
+import { CreateQuery } from 'mongoose';
 import { ApiModel, ApiModelProperty, SwaggerDefinitionConstant } from 'swagger-express-typescript';
-import {User} from '../../users/models/user.model';
-import {Tweet} from '../../tweets/models/tweet.model';
+import { User } from '../../users/models/user.model';
+import { Tweet } from '../../tweets/models/tweet.model';
 
 @ApiModel({
     description: 'Model of Comment',
@@ -16,8 +16,8 @@ export class Comment extends Base {
         example: ['5f423af74c9234267e6aa6ea'],
         type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
-    @prop({required: true})
-    public authorId: Ref<User>;
+    @prop({ ref: () => User, required: true })
+    public author: Ref<User>;
 
     @ApiModelProperty({
         description: 'Tweet id of comment',
@@ -25,8 +25,8 @@ export class Comment extends Base {
         example: ['5f423af74c9234267e6aa6ea'],
         type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
-    @prop({required: false})
-    public tweetId?: Ref<Tweet>;
+    @prop({ ref: () => Tweet, required: false })
+    public tweet?: Ref<Tweet>;
 
     @ApiModelProperty({
         description: 'Text of comment',
@@ -34,7 +34,7 @@ export class Comment extends Base {
         example: ['some comment..'],
         type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
-    @prop({required: true})
+    @prop({ required: true })
     public text: string;
 
     @ApiModelProperty({
@@ -43,7 +43,7 @@ export class Comment extends Base {
         example: ['5f423af74c9234267e6aa6ea'],
         type: SwaggerDefinitionConstant.Response.Type.STRING,
     })
-    @prop({required: false})
+    @prop({ ref: () => Comment, required: false })
     public repliedComment?: Ref<Comment>;
 
     @ApiModelProperty({
@@ -53,7 +53,7 @@ export class Comment extends Base {
         type: SwaggerDefinitionConstant.Response.Type.STRING,
 
     })
-    @prop({ref: () => User, required: false, default: []})
+    @prop({ ref: () => User, required: false, default: [] })
     public likes?: Ref<User>[];
 
     @ApiModelProperty({
@@ -62,7 +62,7 @@ export class Comment extends Base {
         example: ['1599137650207'],
         type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
-    @prop({required: false, default: Date.now()})
+    @prop({ required: false, default: Date.now() })
     public createdAt?: number;
 
     @ApiModelProperty({
@@ -71,7 +71,7 @@ export class Comment extends Base {
         example: ['1599137650207'],
         type: SwaggerDefinitionConstant.Response.Type.NUMBER,
     })
-    @prop({required: false, default: Date.now()})
+    @prop({ required: false, default: Date.now() })
     public lastEdited?: number;
 
     @ApiModelProperty({

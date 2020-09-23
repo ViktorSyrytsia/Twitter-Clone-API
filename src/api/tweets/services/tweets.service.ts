@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { CreateQuery, Types, UpdateQuery } from 'mongoose';
-import { FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND } from 'http-status-codes';
+import { Types } from 'mongoose';
+import { FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 
 import { TweetsRepository } from '../repositories/tweets.repository';
 import { DocumentTweet, Tweet } from '../models/tweet.model';
@@ -17,34 +17,6 @@ export class TweetsService {
     ) {
     }
 
-    public async createTweet(tweet: CreateQuery<Tweet>): Promise<DocumentTweet> {
-        return this._tweetsRepository.createTweet(tweet);
-    }
-
-    public async updateTweet(tweet: UpdateQuery<Tweet>, principal: Principal): Promise<DocumentTweet> {
-        const tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweet._id, principal);
-
-        if (tweetToUpdate.authorId.toLocaleString() !== principal.details._id.toHexString()) {
-            throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
-        }
-        if (!tweetToUpdate) {
-            throw new HttpError(NOT_FOUND, 'Tweet not found');
-        }
-        try {
-            return this._tweetsRepository.updateTweet(tweet, principal);
-        } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
-        }
-    }
-
-    public async deleteTweet(id: Types.ObjectId): Promise<DocumentTweet> {
-        try {
-            return this._tweetsRepository.deleteTweet(id);
-        } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
-        }
-    }
-
     public async findById(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
         try {
             return this._tweetsRepository.findById(id, principal);
@@ -52,6 +24,7 @@ export class TweetsService {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
+
 
     public async findTweetsByAuthorId(authorId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentTweet[]> {
         try {
@@ -72,6 +45,12 @@ export class TweetsService {
     }
 
     public async findRetweetsByTweetId(id: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentTweet[]> {
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
+        }
+
         try {
             return this._tweetsRepository.findRetweetsByTweetId(id, principal, skip, limit);
         } catch (error) {
@@ -81,27 +60,121 @@ export class TweetsService {
 
     public async findLikersByTweetId(id: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentUser[]> {
         const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+
         if (!tweet) {
             throw new HttpError(NOT_FOUND, 'Tweet not found');
         }
+
         try {
-            return this._tweetsRepository.findLikersByTweetId(tweet.likes as Types.ObjectId[], principal, skip, limit);
+            return this._usersService.findUsersByUserIds(tweet.likes as Types.ObjectId[], principal, skip, limit)
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
-    public async likeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
+    public async createTweet(text: string, principal: Principal): Promise<DocumentTweet> {
         try {
-            return this._tweetsRepository.likeTweet(userId, tweetIdToLike);
+            return this._tweetsRepository.createTweet(
+                new Tweet({
+                    author: principal.details._id,
+                    text,
+                }),
+                principal
+            );
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
-    public async unlikeTweet(userId: Types.ObjectId, tweetIdToLike: Types.ObjectId): Promise<DocumentTweet> {
+    public async retweetTweet(text: string, principal: Principal, retweetId: Types.ObjectId): Promise<DocumentTweet> {
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(retweetId, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
+        }
+
         try {
-            return this._tweetsRepository.unlikeTweet(userId, tweetIdToLike);
+            return this._tweetsRepository.createTweet(
+                new Tweet({
+                    text,
+                    author: principal.details._id,
+                    retweetedTweet: tweet._id,
+                }),
+                principal
+            );
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    public async updateTweet(text: string, principal: Principal, tweetId: Types.ObjectId): Promise<DocumentTweet> {
+        const tweetToUpdate: DocumentTweet = await this._tweetsRepository.findById(tweetId, principal);
+
+        if (!tweetToUpdate) {
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
+        }
+
+        if (!((tweetToUpdate.author as Types.ObjectId).equals(principal.details._id))) {
+            throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
+        }
+
+        try {
+            return this._tweetsRepository.updateTweet(tweetToUpdate._id, text, principal);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    public async deleteTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
+        }
+
+        if (!((tweet.author as Types.ObjectId).equals(principal.details._id))) {
+            throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
+        }
+
+        try {
+            return this._tweetsRepository.deleteTweet(id, principal);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+
+    public async likeTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Comment not found');
+        }
+
+        if (tweet.likes.includes(principal.details._id)) {
+            throw new HttpError(UNPROCESSABLE_ENTITY, 'Already liked');
+        }
+
+        try {
+            return this._tweetsRepository.likeTweet(id, principal);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
+    public async unlikeTweet(id: Types.ObjectId, principal: Principal): Promise<DocumentTweet> {
+        const tweet: DocumentTweet = await this._tweetsRepository.findById(id, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Comment not found');
+        }
+
+        if (!tweet.likes.includes(principal.details._id)) {
+            throw new HttpError(UNPROCESSABLE_ENTITY, 'Already unliked');
+        }
+
+        try {
+            return this._tweetsRepository.unlikeTweet(id, principal);
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }

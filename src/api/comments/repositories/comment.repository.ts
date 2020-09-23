@@ -34,6 +34,12 @@ export class CommentRepository extends RepositoryBase<Comment> {
         return this._addLazyLoadAndModify(findCommentsQuery, principal, skip, limit);
     }
 
+    public async countByTweet(
+        tweetId: Types.ObjectId,
+    ): Promise<Number> {
+        return this._repository.countDocuments({ tweet: tweetId });
+    }
+
     public async findRepliesByCommentId(
         commentId: Types.ObjectId,
         principal?: Principal,
@@ -131,7 +137,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         if (principal && await principal.isAuthenticated()) {
             comment.isLiked = comment.likes.includes(principal.details._id);
             comment.isReplied = await this._repository.exists({
-                authorId: principal.details._id,
+                author: principal.details._id,
                 repliedComment: comment._id
             });
         }
@@ -140,6 +146,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
         comment.repliesCount = await this._repository.countDocuments({ repliedComment: comment._id });
         comment.likes = await this._usersService.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
         comment.replies = [];
+        comment.author = await this._usersService.findById(comment.author as Types.ObjectId);
 
         const replies: DocumentComment[] = await this._repository
             .find({ repliedComment: comment._id })
@@ -152,7 +159,6 @@ export class CommentRepository extends RepositoryBase<Comment> {
                 await this._addFields(reply, principal)
             );
         }
-
         return comment;
     }
 }

@@ -1,14 +1,14 @@
-import {injectable} from 'inversify';
-import {CommentRepository} from '../repositories/comment.repository';
-import {Comment, DocumentComment} from '../models/comment.model';
-import {Types} from 'mongoose';
-import {Principal} from '../../auth/models/principal.model';
-import {HttpError} from '../../../shared/models/http.error';
-import {FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY} from 'http-status-codes';
-import {TweetsService} from '../../tweets/services/tweets.service';
-import {DocumentTweet} from '../../tweets/models/tweet.model';
-import {DocumentUser} from '../../users/models/user.model';
-import {UsersService} from '../../users/services/users.service';
+import { injectable } from 'inversify';
+import { CommentRepository } from '../repositories/comment.repository';
+import { Comment, DocumentComment } from '../models/comment.model';
+import { Types } from 'mongoose';
+import { Principal } from '../../auth/models/principal.model';
+import { HttpError } from '../../../shared/models/http.error';
+import { FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } from 'http-status-codes';
+import { TweetsService } from '../../tweets/services/tweets.service';
+import { DocumentTweet } from '../../tweets/models/tweet.model';
+import { DocumentUser } from '../../users/models/user.model';
+import { UsersService } from '../../users/services/users.service';
 
 @injectable()
 export class CommentService {
@@ -21,7 +21,7 @@ export class CommentService {
         return this._commentRepository.findById(id, principal);
     }
 
-    public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip: number, limit: number): Promise<DocumentComment[]> {
+    public async findCommentsByTweet(tweetId: Types.ObjectId, principal: Principal, skip?: number, limit?: number): Promise<DocumentComment[]> {
         const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
 
         if (!tweet) {
@@ -35,7 +35,27 @@ export class CommentService {
         }
     }
 
+    public async countCommentsByTweet(tweetId: Types.ObjectId, principal: Principal): Promise<Number> {
+        const tweet: DocumentTweet = await this._tweetService.findById(tweetId, principal);
+
+        if (!tweet) {
+            throw new HttpError(NOT_FOUND, 'Tweet not found');
+        }
+
+        try {
+            return this._commentRepository.countByTweet(tweetId);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
+    }
+
     public async findRepliedComments(id: Types.ObjectId, principal?: Principal, skip?: number, limit?: number) {
+        const comment: DocumentComment = await this._commentRepository.findById(id);
+
+        if (!comment) {
+            throw new HttpError(NOT_FOUND, 'Comment not found');
+        }
+
         try {
             return this._commentRepository.findRepliesByCommentId(id, principal, skip, limit);
         } catch (error) {
@@ -52,8 +72,8 @@ export class CommentService {
 
         return this._commentRepository.createComment(
             new Comment({
-                authorId: principal.details._id,
-                tweetId: tweetId,
+                author: principal.details._id,
+                tweet: tweetId,
                 text
             }),
             principal
@@ -67,8 +87,8 @@ export class CommentService {
             throw new HttpError(NOT_FOUND, 'Comment not found');
         }
 
-        if (comment.authorId.toLocaleString() !== principal.details._id.toHexString()) {
-            throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
+        if (!((comment.author as Types.ObjectId).equals(principal.details._id))) {
+            throw new HttpError(FORBIDDEN, 'Not an owner of a comment');
         }
 
         try {
@@ -85,8 +105,8 @@ export class CommentService {
             throw new HttpError(NOT_FOUND, 'Comment not found');
         }
 
-        if (comment.authorId.toLocaleString() !== principal.details._id.toHexString()) {
-            throw new HttpError(FORBIDDEN, 'Not an owner of a tweet');
+        if (!((comment.author as Types.ObjectId).equals(principal.details._id))) {
+            throw new HttpError(FORBIDDEN, 'Not an owner of a comment');
         }
 
         try {
@@ -144,7 +164,7 @@ export class CommentService {
             return this._commentRepository.createComment(
                 new Comment({
                     text,
-                    authorId: principal.details._id,
+                    author: principal.details._id,
                     repliedComment: comment._id,
                 }),
                 principal

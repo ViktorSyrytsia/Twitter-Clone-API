@@ -1,43 +1,28 @@
-import {Request, Response} from 'express';
+import { Request, Response } from 'express';
 import {
-    controller,
-    httpDelete,
-    httpGet,
-    httpPatch,
-    httpPost,
-    httpPut,
-    principal,
-    queryParam,
-    request,
-    requestBody,
-    requestParam,
-    response,
+    controller, httpDelete, httpGet, httpPatch, httpPost, httpPut, principal, queryParam, request, requestBody,
+    requestParam, response,
 } from 'inversify-express-utils';
-import {BAD_REQUEST, CREATED, OK} from 'http-status-codes';
+import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
 import {
-    ApiOperationDelete,
-    ApiOperationGet,
-    ApiOperationPatch,
-    ApiOperationPost,
-    ApiOperationPut,
-    ApiPath,
+    ApiOperationDelete, ApiOperationGet, ApiOperationPatch, ApiOperationPost, ApiOperationPut, ApiPath,
     SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
-import {Types} from 'mongoose';
+import { Types } from 'mongoose';
 
-import {ControllerBase} from '../../base/controller.base';
-import {CommentService} from '../services/comment.service';
-import {Comment, DocumentComment} from '../models/comment.model';
-import {HttpError} from '../../../shared/models/http.error';
-import {Principal} from '../../auth/models/principal.model';
-import {AuthMiddleware} from '../../auth/middlewares/auth.middleware';
-import {DocumentUser} from '../../users/models/user.model';
+import { ControllerBase } from '../../base/controller.base';
+import { CommentService } from '../services/comment.service';
+import { Comment, DocumentComment } from '../models/comment.model';
+import { HttpError } from '../../../shared/models/http.error';
+import { Principal } from '../../auth/models/principal.model';
+import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
+import { DocumentUser } from '../../users/models/user.model';
 import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
 
 @ApiPath({
     path: '/api/v1/comments',
     name: 'Comments',
-    security: {apiKeyHeader: []},
+    security: { apiKeyHeader: [] },
 })
 @controller('/comments')
 export class CommentController extends ControllerBase {
@@ -123,7 +108,7 @@ export class CommentController extends ControllerBase {
                 Number.parseInt(skip),
                 Number.parseInt(limit)
             );
-            return this._success<{ users: DocumentUser[] }>(res, OK, {users});
+            return this._success<{ users: DocumentUser[] }>(res, OK, { users });
         } catch (error) {
             return this._fail(res, error);
         }
