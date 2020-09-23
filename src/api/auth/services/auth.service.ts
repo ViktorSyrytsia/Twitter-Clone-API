@@ -1,7 +1,9 @@
 import { injectable } from 'inversify';
 import { sign, verify } from 'jsonwebtoken';
 import { compare, hash } from 'bcrypt';
-import { CONFLICT, EXPECTATION_FAILED, FORBIDDEN, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY } from 'http-status-codes';
+import {
+    CONFLICT, EXPECTATION_FAILED, FORBIDDEN, INTERNAL_SERVER_ERROR, UNPROCESSABLE_ENTITY
+} from 'http-status-codes';
 
 import { DocumentUser, User } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
@@ -19,14 +21,14 @@ import { Types } from 'mongoose';
 
 @injectable()
 export class AuthService {
+    private _accessTokenExpiresIn: string = '3h';
+    private _refreshTokenExpiresIn: string = '7d';
+
     constructor(
         private _usersService: UsersService,
         private _tokenService: TokenService,
         private _mailService: MailService
     ) {}
-
-    private _accessTokenExpiresIn: string = '3h';
-    private _refreshTokenExpiresIn: string = '7d';
 
     public async getPrincipalFromToken(token: string): Promise<DocumentUser> {
         try {
@@ -139,8 +141,8 @@ export class AuthService {
         }
 
         try {
-            const accessToken = this._generateAccessToken( documentUser._id),
-                refreshToken = this._generateRefreshToken( documentUser._id);
+            const accessToken = this._generateAccessToken(documentUser._id),
+                refreshToken = this._generateRefreshToken(documentUser._id);
 
             return new UserWithToken(
                 await this._usersService.findPrincipalById(documentUser._id),
@@ -177,7 +179,7 @@ export class AuthService {
             userId = decrypted.userId;
         } catch (error) {
             throw new HttpError(FORBIDDEN, 'Refresh token is broken or expired');
-        };
+        }
 
         try {
             return {

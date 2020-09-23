@@ -5,7 +5,7 @@ import { DatabaseConnection } from '../../../database/database-connection';
 import { Comment, DocumentComment } from '../models/comment.model';
 import { RepositoryBase } from '../../base/repository.base';
 import { Principal } from '../../auth/models/principal.model';
-import { UsersService } from '../../users/services/users.service';
+import { UsersRepository } from '../../users/repositories/users.repository';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {
@@ -13,7 +13,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
 
     constructor(
         private _databaseConnection: DatabaseConnection,
-        private _usersService: UsersService
+        private _usersRepository: UsersRepository
     ) {
         super();
         this.initRepository(this._databaseConnection, Comment);
@@ -146,9 +146,9 @@ export class CommentRepository extends RepositoryBase<Comment> {
 
         comment.likesCount = comment.likes.length;
         comment.repliesCount = await this._repository.countDocuments({ repliedComment: comment._id });
-        comment.likes = await this._usersService.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
+        comment.likes = await this._usersRepository.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
         comment.replies = [];
-        comment.author = await this._usersService.findById(comment.author as Types.ObjectId);
+        comment.author = await this._usersRepository.findById(comment.author as Types.ObjectId, principal);
 
         const replies: DocumentComment[] = await this._repository
             .find({ repliedComment: comment._id })
