@@ -1,11 +1,12 @@
-import { injectable } from 'inversify';
 import { ReturnModelType } from '@typegoose/typegoose';
+import { injectable } from 'inversify';
 import { CreateQuery, DocumentQuery, Types } from 'mongoose';
+
 import { DatabaseConnection } from '../../../database/database-connection';
-import { Comment, DocumentComment } from '../models/comment.model';
-import { RepositoryBase } from '../../base/repository.base';
 import { Principal } from '../../auth/models/principal.model';
-import { UsersRepository } from '../../users/repositories/users.repository';
+import { RepositoryBase } from '../../base/repository.base';
+import { UsersService } from '../../users/services/users.service';
+import { Comment, DocumentComment } from '../models/comment.model';
 
 @injectable()
 export class CommentRepository extends RepositoryBase<Comment> {
@@ -13,7 +14,7 @@ export class CommentRepository extends RepositoryBase<Comment> {
 
     constructor(
         private _databaseConnection: DatabaseConnection,
-        private _usersRepository: UsersRepository
+        private _usersService: UsersService
     ) {
         super();
         this.initRepository(this._databaseConnection, Comment);
@@ -67,11 +68,11 @@ export class CommentRepository extends RepositoryBase<Comment> {
         const comment: DocumentComment = await this._repository
             .findByIdAndUpdate(
                 commentId, {
-                    $set: {
-                        text,
-                        lastEdited: Date.now()
-                    }
-                }, { new: true }
+                $set: {
+                    text,
+                    lastEdited: Date.now()
+                }
+            }, { new: true }
             )
             .lean();
         return this._addFields(comment, principal);
@@ -146,9 +147,9 @@ export class CommentRepository extends RepositoryBase<Comment> {
 
         comment.likesCount = comment.likes.length;
         comment.repliesCount = await this._repository.countDocuments({ repliedComment: comment._id });
-        comment.likes = await this._usersRepository.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
+        comment.likes = await this._usersService.findUsersByUserIds(comment.likes as Types.ObjectId[], principal, 0, 5);
         comment.replies = [];
-        comment.author = await this._usersRepository.findById(comment.author as Types.ObjectId, principal);
+        comment.author = await this._usersService.findById(comment.author as Types.ObjectId, principal);
 
         const replies: DocumentComment[] = await this._repository
             .find({ repliedComment: comment._id })

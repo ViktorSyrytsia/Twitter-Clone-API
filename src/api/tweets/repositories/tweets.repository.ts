@@ -1,13 +1,14 @@
+import { ReturnModelType } from '@typegoose/typegoose';
 import { injectable } from 'inversify';
 import { CreateQuery, DocumentQuery, Types } from 'mongoose';
-import { ReturnModelType } from '@typegoose/typegoose';
 
 import { DatabaseConnection } from '../../../database/database-connection';
-import { DocumentTweet, Tweet } from '../models/tweet.model';
-import { RepositoryBase } from '../../base/repository.base';
 import { Principal } from '../../auth/models/principal.model';
-import { CommentRepository } from '../../comments/repositories/comment.repository';
-import { UsersRepository } from '../../users/repositories/users.repository';
+import { RepositoryBase } from '../../base/repository.base';
+import { CommentService } from '../../comments/services/comment.service';
+import { UsersService } from '../../users/services/users.service';
+import { DocumentTweet, Tweet } from '../models/tweet.model';
+
 
 @injectable()
 export class TweetsRepository extends RepositoryBase<Tweet> {
@@ -15,8 +16,8 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
 
     constructor(
         private _databaseConnection: DatabaseConnection,
-        private _usersRepository: UsersRepository,
-        private _commentsRepository: CommentRepository
+        private _usersService: UsersService,
+        private _commentService: CommentService
     ) {
         super();
         this.initRepository(this._databaseConnection, Tweet);
@@ -29,11 +30,11 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
 
     public async updateTweet(tweetId: Types.ObjectId, text: string, principal: Principal): Promise<DocumentTweet> {
         const updatedTweet: DocumentTweet = await this._repository.findByIdAndUpdate(tweetId, {
-                $set: {
-                    text,
-                    lastEdited: Date.now()
-                }
-            }, { new: true }
+            $set: {
+                text,
+                lastEdited: Date.now()
+            }
+        }, { new: true }
         ).lean();
         return this._addFields(updatedTweet, principal);
     }
@@ -127,9 +128,9 @@ export class TweetsRepository extends RepositoryBase<Tweet> {
 
         tweet.likesCount = tweet.likes.length;
         tweet.retweetsCount = await this._repository.countDocuments({ retweetedTweet: tweet._id });
-        tweet.likes = await this._usersRepository.findUsersByUserIds(tweet.likes as Types.ObjectId[], principal, 0, 5);
-        tweet.commentsCount = await this._commentsRepository.countByTweet(tweet._id);
-        tweet.author = await this._usersRepository.findById(tweet.author as Types.ObjectId, principal);
+        tweet.likes = await this._usersService.findUsersByUserIds(tweet.likes as Types.ObjectId[], principal, 0, 5);
+        tweet.commentsCount = await this._commentService.countCommentsByTweet(tweet._id);
+        tweet.author = await this._usersService.findById(tweet.author as Types.ObjectId, principal);
 
         if (tweet.retweetedTweet) {
             tweet.retweetedTweet = await this.findById(tweet.retweetedTweet as Types.ObjectId, principal);

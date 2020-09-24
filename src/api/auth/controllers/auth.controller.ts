@@ -1,6 +1,20 @@
-import { controller, httpPost, request, requestBody, response, requestParam, principal, requestHeaders, httpGet } from 'inversify-express-utils';
+import {
+    controller,
+    httpPost,
+    request,
+    requestBody,
+    response,
+    requestParam,
+    principal,
+    requestHeaders,
+    httpGet,
+} from 'inversify-express-utils';
 import { Request, Response } from 'express';
-import { ApiPath, ApiOperationPost, ApiOperationGet } from 'swagger-express-typescript';
+import {
+    ApiPath,
+    ApiOperationPost,
+    ApiOperationGet,
+} from 'swagger-express-typescript';
 
 import { ControllerBase } from '../../base/controller.base';
 import { AuthService } from '../services/auth.service';
@@ -9,20 +23,18 @@ import { SignInCredentials } from '../interfaces/sign-in-credentials.interface';
 import { SignUpCredentials } from '../interfaces/sign-up-credentials.interface';
 import { Principal } from '../models/principal.model';
 import { AuthMiddleware } from '../middlewares/auth.middleware';
-
+import { UploadedFile } from 'express-fileupload';
 
 @ApiPath({
     path: '/api/v1/auth',
     name: 'Auth',
     security: {
-        apiKeyHeader: []
+        apiKeyHeader: [],
     },
 })
 @controller('/auth')
 export class AuthController extends ControllerBase {
-    constructor(
-        private _authService: AuthService
-    ) {
+    constructor(private _authService: AuthService) {
         super();
     }
 
@@ -30,48 +42,57 @@ export class AuthController extends ControllerBase {
         summary: 'Sign Up',
         path: '/sign-up',
         parameters: {
+            formData: {
+                file: {
+                    type: 'file',
+                    description: 'File to post',
+                    allowEmptyValue: false,
+                    required: false,
+                },
+            },
             body: {
                 required: true,
                 allowEmptyValue: false,
-                description: 'Valid passwords are at least 6 characters long, contain numbers, uppercase and lowercase letters',
+                description:
+                    'Valid passwords are at least 6 characters long, contain numbers, uppercase and lowercase letters',
                 properties: {
                     firstName: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User firstname',
-                        example: 'Json'
+                        example: 'Json',
                     },
                     lastName: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User lastname',
-                        example: 'Bourne'
+                        example: 'Bourne',
                     },
                     username: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User nickname',
-                        example: 'elonmusk'
+                        example: 'elonmusk',
                     },
                     email: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User email',
-                        example: 'example@gmail.com'
+                        example: 'example@gmail.com',
                     },
                     password: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User password',
-                        example: 'catsAreCute!2020'
-                    }
-                }
-            }
+                        example: 'catsAreCute!2020',
+                    },
+                },
+            },
         },
         responses: {
             200: {
@@ -79,16 +100,18 @@ export class AuthController extends ControllerBase {
             },
             409: {
                 model: 'HttpError',
-                description: 'This email already exists | This username already exists'
+                description:
+                    'This email already exists | This username already exists',
             },
             422: {
                 model: 'HttpError',
-                description: 'Wrong json | Wrong email format | Password must be at least 6 characters long, contain numbers, uppercase and lowercase letters'
-            }
+                description:
+                    'Wrong json | Wrong email format | Password must be at least 6 characters long, contain numbers, uppercase and lowercase letters',
+            },
         },
         security: {
             apiKeyHeader: [],
-        }
+        },
     })
     @httpPost('/sign-up')
     public async signUp(
@@ -97,7 +120,10 @@ export class AuthController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            await this._authService.signUp(credentials);
+            await this._authService.signUp({
+                ...credentials,
+                file: req.files.file as UploadedFile,
+            });
             return this._success(res, 200);
         } catch (error) {
             return this._fail(res, error);
@@ -118,32 +144,32 @@ export class AuthController extends ControllerBase {
                         required: true,
                         allowEmptyValue: false,
                         description: 'User email or username',
-                        example: 'elonmusk || example@gmail.com'
+                        example: 'elonmusk || example@gmail.com',
                     },
                     password: {
                         type: 'string',
                         required: true,
                         allowEmptyValue: false,
                         description: 'User password',
-                        example: 'catsAreCute!2020'
-                    }
-                }
-            }
+                        example: 'catsAreCute!2020',
+                    },
+                },
+            },
         },
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt tokens'
+                description: 'Returns user with jwt tokens',
             },
             417: {
                 model: 'HttpError',
-                description: 'User doesn\'t exist or password doesn\'t match'
+                description: 'User doesn\'t exist or password doesn\'t match',
             },
             422: {
                 model: 'HttpError',
-                description: 'Wrong json'
+                description: 'Wrong json',
             },
-        }
+        },
     })
     @httpPost('/sign-in')
     public async signIn(
@@ -152,8 +178,10 @@ export class AuthController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const userWithToken: UserWithToken = await this._authService.signIn(credentials);
-            return this._success<UserWithToken> (res, 200, userWithToken);
+            const userWithToken: UserWithToken = await this._authService.signIn(
+                credentials
+            );
+            return this._success<UserWithToken>(res, 200, userWithToken);
         } catch (error) {
             return this._fail(res, error);
         }
@@ -167,20 +195,20 @@ export class AuthController extends ControllerBase {
                 token: {
                     name: 'token',
                     description: 'Email confirmation token',
-                    required: true
-                }
+                    required: true,
+                },
             },
         },
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt tokens'
+                description: 'Returns user with jwt tokens',
             },
             417: {
                 model: 'HttpError',
-                description: 'Token is broken or expired'
-            }
-        }
+                description: 'Token is broken or expired',
+            },
+        },
     })
     @httpPost('/confirm-email/:token')
     public async confirmEmail(
@@ -189,8 +217,10 @@ export class AuthController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const userWithToken: UserWithToken = await this._authService.confirmEmail(token);
-            return this._success<UserWithToken> (res, 200, userWithToken);
+            const userWithToken: UserWithToken = await this._authService.confirmEmail(
+                token
+            );
+            return this._success<UserWithToken>(res, 200, userWithToken);
         } catch (error) {
             return this._fail(res, error);
         }
@@ -203,21 +233,21 @@ export class AuthController extends ControllerBase {
         description: 'In case if original link expires (5m lifetime)',
         responses: {
             200: {
-                description: 'Sends new verification link to user\'s email'
+                description: 'Sends new verification link to user\'s email',
             },
             401: {
                 model: 'HttpError',
-                description: 'Unauthorized'
+                description: 'Unauthorized',
             },
             404: {
                 model: 'HttpError',
-                description: 'User not found'
+                description: 'User not found',
             },
             409: {
                 model: 'HttpError',
-                description: 'User already activated'
-            }
-        }
+                description: 'User already activated',
+            },
+        },
     })
     @httpPost('/resend-confirm-email', AuthMiddleware)
     public async resendConfirmEmail(
@@ -240,22 +270,24 @@ export class AuthController extends ControllerBase {
         responses: {
             200: {
                 model: 'UserWithToken',
-                description: 'Returns user with jwt tokens'
+                description: 'Returns user with jwt tokens',
             },
             403: {
                 model: 'HttpError',
-                description: 'Refresh token is broken or expired'
-            }
-        }
+                description: 'Refresh token is broken or expired',
+            },
+        },
     })
     @httpGet('/refresh-access-token')
     public async refreshAccessToken(
         @request() req: Request,
         @response() res: Response,
-        @requestHeaders('x-refresh-token') refreshToken: string,
+        @requestHeaders('x-refresh-token') refreshToken: string
     ): Promise<Response> {
         try {
-            const userWithToken: UserWithToken = await this._authService.refreshAccessToken(refreshToken);
+            const userWithToken: UserWithToken = await this._authService.refreshAccessToken(
+                refreshToken
+            );
             return this._success(res, 200, userWithToken);
         } catch (error) {
             return this._fail(res, error);

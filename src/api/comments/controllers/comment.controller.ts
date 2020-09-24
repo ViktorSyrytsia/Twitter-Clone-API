@@ -1,23 +1,26 @@
 import { Request, Response } from 'express';
+import { BAD_REQUEST, CREATED, FORBIDDEN, NOT_FOUND, OK, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 import {
     controller, httpDelete, httpGet, httpPatch, httpPost, httpPut, principal, queryParam, request, requestBody,
-    requestParam, response,
+    requestParam, response
 } from 'inversify-express-utils';
-import { BAD_REQUEST, CREATED, OK } from 'http-status-codes';
+import { Types } from 'mongoose';
 import {
     ApiOperationDelete, ApiOperationGet, ApiOperationPatch, ApiOperationPost, ApiOperationPut, ApiPath,
-    SwaggerDefinitionConstant,
+    SwaggerDefinitionConstant
 } from 'swagger-express-typescript';
-import { Types } from 'mongoose';
 
-import { ControllerBase } from '../../base/controller.base';
-import { CommentService } from '../services/comment.service';
-import { Comment, DocumentComment } from '../models/comment.model';
 import { HttpError } from '../../../shared/models/http.error';
-import { Principal } from '../../auth/models/principal.model';
-import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
-import { DocumentUser } from '../../users/models/user.model';
 import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
+import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
+import { Principal } from '../../auth/models/principal.model';
+import { ControllerBase } from '../../base/controller.base';
+import { DocumentTweet } from '../../tweets/models/tweet.model';
+import { TweetsService } from '../../tweets/services/tweets.service';
+import { DocumentUser } from '../../users/models/user.model';
+import { DocumentComment } from '../models/comment.model';
+import { CommentService } from '../services/comment.service';
+
 
 @ApiPath({
     path: '/api/v1/comments',
@@ -26,7 +29,9 @@ import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.m
 })
 @controller('/comments')
 export class CommentController extends ControllerBase {
-    constructor(private _commentService: CommentService) {
+    constructor(
+        private _commentService: CommentService,
+        private _tweetService: TweetsService) {
         super();
     }
 
@@ -95,15 +100,24 @@ export class CommentController extends ControllerBase {
         @queryParam('limit') limit: string,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Comment id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!comment) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Comment id is missing')
+                    new HttpError(NOT_FOUND, 'Comment not found')
                 );
+
             }
+
             const users: DocumentUser[] = await this._commentService.findLikersByCommentId(
-                new Types.ObjectId(id),
+                comment,
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
@@ -188,6 +202,12 @@ export class CommentController extends ControllerBase {
         }
 
         try {
+            const tweet: DocumentTweet = await this._tweetService.findById(new Types.ObjectId(tweetId));
+            if (!tweet) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Tweet not found'));
+            }
             const comments: DocumentComment[] =
                 await this._commentService.findCommentsByTweet(
                     new Types.ObjectId(tweetId),
@@ -273,6 +293,14 @@ export class CommentController extends ControllerBase {
         }
 
         try {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(commentId), principal);
+            if (!comment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+            }
+
             const comments: DocumentComment[] =
                 await this._commentService.findRepliedComments(
                     new Types.ObjectId(commentId),
@@ -365,14 +393,21 @@ export class CommentController extends ControllerBase {
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
             );
         }
+
         if (!body.text) {
             return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Comment text is missing')
             );
         }
-
         try {
+            const tweet: DocumentTweet = await this._tweetService.findById(new Types.ObjectId(tweetId));
+            if (!tweet) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Tweet not found')
+                );
+            }
             const createdComment: DocumentComment =
                 await this._commentService.createComment(
                     body.text,
@@ -473,11 +508,27 @@ export class CommentController extends ControllerBase {
         }
 
         try {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!comment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+            }
+            if (!((comment.author as Types.ObjectId).equals(principal.details._id))) {
+                return this._fail(
+                    res,
+                    new HttpError(FORBIDDEN, 'Not an owner of a comment')
+                );
+
+            }
+
+
             const updatedComment: DocumentComment =
                 await this._commentService.updateComment(
-                    new Types.ObjectId(id),
                     body.text,
-                    principal
+                    principal,
+                    comment
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
@@ -554,8 +605,23 @@ export class CommentController extends ControllerBase {
         }
 
         try {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!comment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+            }
+            if (!((comment.author as Types.ObjectId).equals(principal.details._id))) {
+                return this._fail(
+                    res,
+                    new HttpError(FORBIDDEN, 'Not an owner of a comment')
+                );
+
+            }
+
             const deletedComment: DocumentComment = await this._commentService
-                .deleteComment(principal, new Types.ObjectId(id));
+                .deleteComment(principal, comment);
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
                 comment: deletedComment
@@ -637,11 +703,25 @@ export class CommentController extends ControllerBase {
             );
         }
         try {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!comment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+            }
+            if (comment.likes.includes(principal.details._id)) {
+                return this._fail(
+                    res,
+                    new HttpError(UNPROCESSABLE_ENTITY, 'Already liked')
+                );
+
+            }
 
             const likedComment: DocumentComment =
                 await this._commentService.likeComment(
                     principal,
-                    new Types.ObjectId(id)
+                    comment
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
@@ -723,10 +803,26 @@ export class CommentController extends ControllerBase {
             );
         }
         try {
+            const comment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!comment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+
+            }
+            if (!comment.likes.includes(principal.details._id)) {
+                return this._fail(
+                    res,
+                    new HttpError(UNPROCESSABLE_ENTITY, 'Already unliked')
+                );
+
+            }
+
             const unlikedComment: DocumentComment =
                 await this._commentService.unlikeComment(
                     principal,
-                    new Types.ObjectId(id)
+                    comment
                 );
 
             return this._success<{ comment: DocumentComment }>(res, OK, {
@@ -822,11 +918,19 @@ export class CommentController extends ControllerBase {
         }
 
         try {
+            const repliedCpmment: DocumentComment = await this._commentService.findById(new Types.ObjectId(id), principal);
+            if (!repliedCpmment) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Comment not found')
+                );
+            }
+
             const comment: DocumentComment =
                 await this._commentService.replyComment(
                     body.text,
                     principal,
-                    new Types.ObjectId(id),
+                    repliedCpmment.id,
                 );
 
             return this._success<{ comment: DocumentComment }>(res, CREATED, { comment });

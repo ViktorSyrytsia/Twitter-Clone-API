@@ -9,11 +9,11 @@ import { TokenRepository } from './repositories/token.repository';
 import { ActivatedUserMiddleware } from './middlewares/activated.user.middleware';
 
 export const AuthModule = new ContainerModule((bind: interfaces.Bind) => {
-    bind(AuthMiddleware).to(AuthMiddleware).inSingletonScope();
-    bind(ActivatedUserMiddleware).to(ActivatedUserMiddleware).inSingletonScope();
-    bind(AuthService).to(AuthService).inSingletonScope();
-    bind(MailService).to(MailService).inSingletonScope();
-    bind(AuthController).to(AuthController).inSingletonScope();
-    bind(TokenService).to(TokenService).inSingletonScope();
-    bind(TokenRepository).to(TokenRepository).inSingletonScope();
+    bind(AuthMiddleware).to(AuthMiddleware);
+    bind(ActivatedUserMiddleware).to(ActivatedUserMiddleware);
+    bind(AuthService).to(AuthService);
+    bind(MailService).to(MailService);
+    bind(AuthController).to(AuthController);
+    bind(TokenService).to(TokenService);
+    bind(TokenRepository).to(TokenRepository);
 });

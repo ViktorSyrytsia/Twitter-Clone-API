@@ -1,10 +1,23 @@
 import { Request, Response } from 'express';
 import {
-    controller, httpDelete, httpGet, httpPut, principal, queryParam, request, requestBody, requestParam, response,
+    controller,
+    httpDelete,
+    httpGet,
+    httpPut,
+    principal,
+    queryParam,
+    request,
+    requestBody,
+    requestParam,
+    response,
 } from 'inversify-express-utils';
-import { BAD_REQUEST, OK } from 'http-status-codes';
+import { BAD_REQUEST, NOT_FOUND, OK } from 'http-status-codes';
 import {
-    ApiOperationDelete, ApiOperationGet, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
+    ApiOperationDelete,
+    ApiOperationGet,
+    ApiOperationPut,
+    ApiPath,
+    SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
 import { Types } from 'mongoose';
 
@@ -15,7 +28,8 @@ import { DocumentUser, User } from '../models/user.model';
 import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
 import { HttpError } from '../../../shared/models/http.error';
-
+import { UploadedFile } from 'express-fileupload';
+import { UploadsService } from '../../uploads/services/uploads.service';
 
 @ApiPath({
     path: '/api/v1/users',
@@ -25,13 +39,15 @@ import { HttpError } from '../../../shared/models/http.error';
 @controller('/users')
 export class UsersController extends ControllerBase {
     constructor(
-        private _userService: UsersService
+        private _userService: UsersService,
+        private _uploadService: UploadsService
     ) {
         super();
     }
 
     @ApiOperationGet({
-        description: 'Search for user object or list of users objects by search query',
+        description:
+            'Search for user object or list of users objects by search query',
         summary: 'Users search',
         path: '/',
         parameters: {
@@ -41,7 +57,8 @@ export class UsersController extends ControllerBase {
                     required: false,
                     allowEmptyValue: true,
                     name: 'search',
-                    description: 'Searching by username / email / firstname / lastname',
+                    description:
+                        'Searching by username / email / firstname / lastname',
                 },
                 skip: {
                     type: SwaggerDefinitionConstant.Response.Type.NUMBER,
@@ -57,14 +74,14 @@ export class UsersController extends ControllerBase {
                     name: 'limit',
                     description: 'Limit count',
                 },
-            }
+            },
         },
         responses: {
             200: {
                 description: 'users array DTO',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'User',
-            }
+            },
         },
         security: {
             apiKeyHeader: [],
@@ -88,10 +105,7 @@ export class UsersController extends ControllerBase {
             );
             return this._success<{ users: DocumentUser[] }>(res, OK, { users });
         } catch (error) {
-            return this._fail(
-                res,
-                error
-            );
+            return this._fail(res, error);
         }
     }
 
@@ -131,27 +145,34 @@ export class UsersController extends ControllerBase {
             const user: DocumentUser = await this._userService.findPrincipalById(principal.details._id);
             return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
-            return this._fail(
-                res,
-                error
-            );
+            return this._fail(res, error);
         }
     }
 
     @ApiOperationPut({
-        description: 'Update currently logged user (can change: avatar, firstName, lastName, username, email)',
+        description:
+            'Update currently logged user (can change: avatar, firstName, lastName, username, email)',
         summary: 'Update current user',
         path: '/current',
         parameters: {
             body: {
                 required: true,
                 allowEmptyValue: false,
-                model: 'User'
-            }
+                model: 'User',
+            },
+            formData: {
+                file: {
+                    type: 'file',
+                    description: 'File to post',
+                    allowEmptyValue: false,
+                    required: false,
+                },
+            },
         },
         responses: {
             200: {
-                description: 'Returns updated user, sends verification link to new email if email was changed',
+                description:
+                    'Returns updated user, sends verification link to new email if email was changed',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'User',
             },
@@ -166,7 +187,8 @@ export class UsersController extends ControllerBase {
                 model: 'HttpError',
             },
             409: {
-                description: 'This username already exists | This email already exists',
+                description:
+                    'This username already exists | This email already exists',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
@@ -175,8 +197,6 @@ export class UsersController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
             },
-
-
         },
         security: {
             apiKeyHeader: [],
@@ -190,8 +210,80 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         try {
-            const updatedUser: DocumentUser = await this._userService.updateUser(user, principal);
-            return this._success<{ updatedUser: DocumentUser }>(res, OK, { updatedUser });
+            const updatedUser: DocumentUser = await this._userService.updateUser(
+                user,
+                principal,
+                req.files.file as UploadedFile
+            );
+            return this._success<{ updatedUser: DocumentUser }>(res, OK, {
+                updatedUser,
+            });
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationPut({
+        description: 'Update currently logged user avatar',
+        summary: 'Update current user avatar',
+        path: '/change-avatar',
+        parameters: {
+            formData: {
+                file: {
+                    type: 'file',
+                    description: 'File to post',
+                    allowEmptyValue: false,
+                    required: true,
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: 'Returns updated user',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'User',
+            },
+            400: {
+                description: 'Avatar is missing',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpPut('/change-avatar', AuthMiddleware, ActivatedUserMiddleware)
+    public async updateCurrentUserAvatar(
+        @principal() principal: Principal,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        if (!req.files.file) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'File is missing')
+            );
+        }
+
+        try {
+            const updatedUser: DocumentUser = await this._userService.changeAvatar(
+                principal.details._id,
+                req.files.file as UploadedFile
+            );
+            return this._success<{ updatedUser: DocumentUser }>(res, OK, {
+                updatedUser,
+            });
         } catch (error) {
             return this._fail(res, error);
         }
@@ -211,7 +303,7 @@ export class UsersController extends ControllerBase {
                 description: 'Unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.OBJECT,
                 model: 'HttpError',
-            }
+            },
         },
         security: {
             apiKeyHeader: [],
@@ -242,8 +334,8 @@ export class UsersController extends ControllerBase {
                     name: 'id',
                     allowEmptyValue: false,
                     description: 'Id of followed user',
-                    required: true
-                }
+                    required: true,
+                },
             },
             query: {
                 skip: {
@@ -260,7 +352,7 @@ export class UsersController extends ControllerBase {
                     name: 'limit',
                     description: 'Limit count',
                 },
-            }
+            },
         },
         responses: {
             200: {
@@ -287,21 +379,32 @@ export class UsersController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+        }
+
         try {
+            const user: DocumentUser = await this._userService.findById(new Types.ObjectId(id));
+            if (!user) {
+                return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
+            }
             const followers: DocumentUser[] = await this._userService.findFollowers(
                 new Types.ObjectId(id),
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
             );
-            return this._success<{ followers: DocumentUser[] }>(res, OK, { followers });
+            return this._success<{ followers: DocumentUser[] }>(res, OK, {
+                followers,
+            });
         } catch (error) {
             return this._fail(res, error);
         }
     }
 
     @ApiOperationGet({
-        description: 'Returns array of users that are followed by given user Id',
+        description:
+            'Returns array of users that are followed by given user Id',
         summary: 'Get array of follows',
         path: '/follows/{id}',
         parameters: {
@@ -311,8 +414,8 @@ export class UsersController extends ControllerBase {
                     name: 'id',
                     allowEmptyValue: false,
                     description: 'Id of following user',
-                    required: true
-                }
+                    required: true,
+                },
             },
             query: {
                 skip: {
@@ -329,7 +432,7 @@ export class UsersController extends ControllerBase {
                     name: 'limit',
                     description: 'Limit count',
                 },
-            }
+            },
         },
         responses: {
             200: {
@@ -356,14 +459,25 @@ export class UsersController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+        }
+
         try {
+            const user: DocumentUser = await this._userService.findById(new Types.ObjectId(id));
+            if (!user) {
+                return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
+            }
+
             const follows: DocumentUser[] = await this._userService.findFollows(
                 new Types.ObjectId(id),
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
             );
-            return this._success<{ follows: DocumentUser[] }>(res, OK, { follows });
+            return this._success<{ follows: DocumentUser[] }>(res, OK, {
+                follows,
+            });
         } catch (error) {
             return this._fail(res, error);
         }
@@ -380,9 +494,9 @@ export class UsersController extends ControllerBase {
                     name: 'id',
                     allowEmptyValue: false,
                     description: 'Id of user to follow',
-                    required: true
-                }
-            }
+                    required: true,
+                },
+            },
         },
         responses: {
             200: {
@@ -417,11 +531,19 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         if (!id) {
-            this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
         }
 
         try {
-            await this._userService.followUser(new Types.ObjectId(id), principal);
+            const userToFollow: DocumentUser = await this._userService.findById(new Types.ObjectId(id));
+            if (!userToFollow) {
+                return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
+            }
+
+            await this._userService.followUser(
+                new Types.ObjectId(id),
+                principal
+            );
             return this._success<{ user: DocumentUser }>(res, OK);
         } catch (error) {
             return this._fail(res, error);
@@ -439,9 +561,9 @@ export class UsersController extends ControllerBase {
                     name: 'id',
                     allowEmptyValue: false,
                     description: 'Id of user to unfollow',
-                    required: true
-                }
-            }
+                    required: true,
+                },
+            },
         },
         responses: {
             200: {
@@ -475,11 +597,25 @@ export class UsersController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         if (!id) {
-            this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'User is missing')
+            );
         }
 
         try {
-            await this._userService.unfollowUser(new Types.ObjectId(id), principal);
+            const userToUnfollow: DocumentUser = await this._userService.findById(new Types.ObjectId(id));
+            if (!userToUnfollow) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'User not found')
+                );
+            }
+
+            await this._userService.unfollowUser(
+                new Types.ObjectId(id),
+                principal
+            );
             return this._success<{ user: DocumentUser }>(res, OK);
         } catch (error) {
             return this._fail(res, error);
@@ -497,8 +633,8 @@ export class UsersController extends ControllerBase {
                     name: 'id',
                     allowEmptyValue: false,
                     description: 'Id of user to get',
-                    required: true
-                }
+                    required: true,
+                },
             },
         },
         responses: {
@@ -522,10 +658,13 @@ export class UsersController extends ControllerBase {
         @requestParam('id') id: string,
         @request() req: Request,
         @response() res: Response,
-        @principal() principal: Principal,
+        @principal() principal: Principal
     ): Promise<Response> {
         try {
-            const user: DocumentUser = await this._userService.findById(new Types.ObjectId(id), principal);
+            const user: DocumentUser = await this._userService.findById(
+                new Types.ObjectId(id),
+                principal
+            );
             return this._success<{ user: DocumentUser }>(res, OK, { user });
         } catch (error) {
             return this._fail(res, error);

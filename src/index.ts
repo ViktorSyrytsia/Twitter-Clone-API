@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 
 if (!process.env.IS_PRODUCTION) {
     dotenv.config({
-        path: '.env.dev'
+        path: '.env.dev',
     });
 }
 
@@ -21,11 +21,6 @@ const app: App = AppModule.get(App),
         AuthProvider
     );
 
-server
-    .build()
-    .listen(app.port, (err) => {
-        if (err) {
-            return console.log(err.message);
-        }
-        console.log(`Server started on port ${app.port}`);
-    });
+server.build().listen(app.port, () => {
+    console.log(`Server started on port ${app.port}`);
+});

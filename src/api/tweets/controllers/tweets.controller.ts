@@ -7,7 +7,7 @@ import {
     ApiOperationDelete, ApiOperationGet, ApiOperationPost, ApiOperationPut, ApiPath, SwaggerDefinitionConstant,
 } from 'swagger-express-typescript';
 import { Types } from 'mongoose';
-import { BAD_REQUEST, OK } from 'http-status-codes';
+import { BAD_REQUEST, FORBIDDEN, NOT_FOUND, OK, UNPROCESSABLE_ENTITY } from 'http-status-codes';
 
 import { ControllerBase } from '../../base/controller.base';
 import { TweetsService } from '../services/tweets.service';
@@ -16,6 +16,7 @@ import { Principal } from '../../auth/models/principal.model';
 import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 import { HttpError } from '../../../shared/models/http.error';
 import { DocumentUser } from '../../users/models/user.model';
+import { UsersService } from '../../users/services/users.service';
 
 @ApiPath({
     path: '/api/v1/tweets',
@@ -26,7 +27,7 @@ import { DocumentUser } from '../../users/models/user.model';
 export class TweetsController extends ControllerBase {
 
     constructor(
-        private _tweetsService: TweetsService
+        private _tweetsService: TweetsService,
     ) {
         super();
     }
@@ -96,13 +97,22 @@ export class TweetsController extends ControllerBase {
         @queryParam('limit') limit: string,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Retweeted Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const tweet: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweet) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Retweeted Tweet id is missing')
+                    new HttpError(NOT_FOUND, 'Tweet not found')
                 );
+
             }
+
             const retweets: DocumentTweet[] = await this._tweetsService.findRetweetsByTweetId(
                 new Types.ObjectId(id),
                 principal,
@@ -172,13 +182,13 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
-                return this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
-                );
-            }
             const tweet: DocumentTweet = await this._tweetsService.findById(
                 new Types.ObjectId(id),
                 principal
@@ -238,15 +248,24 @@ export class TweetsController extends ControllerBase {
         @queryParam('limit') limit: string,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const tweet: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweet) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                    new HttpError(NOT_FOUND, 'Tweet not found')
                 );
+
             }
+
             const users: DocumentUser[] = await this._tweetsService.findLikersByTweetId(
-                new Types.ObjectId(id),
+                tweet,
                 principal,
                 Number.parseInt(skip),
                 Number.parseInt(limit)
@@ -324,13 +343,13 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Author id is missing')
+            );
+        }
         try {
-            if (!id) {
-                return this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'Author id is missing')
-                );
-            }
             const tweet: DocumentTweet[] = await this._tweetsService.findTweetsByAuthorId(
                 new Types.ObjectId(id),
                 principal,
@@ -404,13 +423,13 @@ export class TweetsController extends ControllerBase {
         @response() res: Response,
         @principal() principal: Principal,
     ): Promise<Response> {
+        if (!body.text) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet text is missing')
+            );
+        }
         try {
-            if (!body.text) {
-                this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'Tweet text is missing')
-                );
-            }
             const newTweet: DocumentTweet = await this._tweetsService.createTweet(
                 body.text,
                 principal,
@@ -479,13 +498,28 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const tweetToDelete: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweetToDelete) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                    new HttpError(NOT_FOUND, 'Tweet not found')
+                );
+
+            }
+            if (!((tweetToDelete.author as Types.ObjectId).equals(principal.details._id))) {
+                return this._fail(
+                    res,
+                    new HttpError(FORBIDDEN, 'Not an owner of a tweet')
                 );
             }
+
             const tweet = await this._tweetsService.deleteTweet(new Types.ObjectId(id), principal);
             return this._success<{ tweet: DocumentTweet }>(res, OK, { tweet });
         } catch (error) {
@@ -568,19 +602,34 @@ export class TweetsController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         if (!id) {
-            this._fail(
+            return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet id is missing')
             );
         }
         if (!body.text) {
-            this._fail(
+            return this._fail(
                 res,
                 new HttpError(BAD_REQUEST, 'Tweet text is missing')
             );
         }
 
         try {
+            const tweetToUpdate: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweetToUpdate) {
+                return this._fail(
+                    res,
+                    new HttpError(NOT_FOUND, 'Tweet not found')
+                );
+
+            }
+            if (!((tweetToUpdate.author as Types.ObjectId).equals(principal.details._id))) {
+                return this._fail(
+                    res,
+                    new HttpError(FORBIDDEN, 'Not an owner of a tweet')
+                );
+            }
+
             const updatedTweet: DocumentTweet = await this._tweetsService.updateTweet(
                 body.text,
                 principal,
@@ -665,13 +714,29 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const tweetToLike: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweetToLike) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                    new HttpError(NOT_FOUND, 'Comment not found')
                 );
+
             }
+            if (tweetToLike.likes.includes(principal.details._id)) {
+                return this._fail(
+                    res,
+                    new HttpError(UNPROCESSABLE_ENTITY, 'Already liked')
+                );
+
+            }
+
             const tweet: DocumentTweet = await this._tweetsService.likeTweet(
                 new Types.ObjectId(id),
                 principal
@@ -746,13 +811,29 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (!id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'Tweet id is missing')
+            );
+        }
         try {
-            if (!id) {
+            const tweetToUnlike: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweetToUnlike) {
                 return this._fail(
                     res,
-                    new HttpError(BAD_REQUEST, 'Tweet id is missing')
+                    new HttpError(NOT_FOUND, 'Comment not found')
                 );
+
             }
+            if (!tweetToUnlike.likes.includes(principal.details._id)) {
+                return this._fail(
+                    res,
+                    new HttpError(UNPROCESSABLE_ENTITY, 'Already unliked')
+                );
+
+            }
+
             const tweet: DocumentTweet = await this._tweetsService.unlikeTweet(
                 new Types.ObjectId(id),
                 principal
@@ -909,13 +990,18 @@ export class TweetsController extends ControllerBase {
         @request() req: Request,
         @response() res: Response
     ): Promise<Response> {
+        if (id) {
+            return this._fail(
+                res,
+                new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
+            );
+        }
         try {
-            if (id) {
-                return this._fail(
-                    res,
-                    new HttpError(BAD_REQUEST, 'retweetedTweet id is missing')
-                );
+            const tweet: DocumentTweet = await this._tweetsService.findById(new Types.ObjectId(id));
+            if (!tweet) {
+                throw new HttpError(NOT_FOUND, 'Tweet not found');
             }
+
             const retweet: DocumentTweet = await this._tweetsService.retweetTweet(
                 body.text,
                 principal,

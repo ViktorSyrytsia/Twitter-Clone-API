@@ -4,6 +4,7 @@ import { CreateQuery } from 'mongoose';
 import { ApiModel, ApiModelProperty } from 'swagger-express-typescript';
 
 import { RolesEnum } from '../enums/users.enum';
+import { File } from '../../uploads/models/file.model';
 
 @ApiModel({
     description: 'Model of user',
@@ -57,8 +58,8 @@ export class User extends Base {
         required: true,
         example: ['https://googledrive.com/images/my_avatar'],
     })
-    @prop({ required: false })
-    public avatar?: string;
+    @prop({ ref: () => File, required: false })
+    public avatar?: Ref<File>;
 
     @ApiModelProperty({
         description:
