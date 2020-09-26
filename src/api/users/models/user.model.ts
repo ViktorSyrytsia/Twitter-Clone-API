@@ -5,6 +5,7 @@ import { ApiModel, ApiModelProperty } from 'swagger-express-typescript';
 
 import { RolesEnum } from '../enums/users.enum';
 import { File } from '../../uploads/models/file.model';
+import { Room } from '../../chat/models/room.model';
 
 @ApiModel({
     description: 'Model of user',
@@ -85,6 +86,30 @@ export class User extends Base {
     })
     @prop({ ref: () => User, required: false, default: [] })
     public followers?: Ref<User>[];
+
+    @ApiModelProperty({
+        description: 'User Socket id',
+        required: false,
+        example: ['SocketId'],
+    })
+    @prop({ required: false })
+    public socketId?: string;
+
+    @ApiModelProperty({
+        description: 'Rooms to which the user is subscribed',
+        required: false,
+        example: ['Room1, Room2'],
+    })
+    @prop({ ref: () => Room, required: false })
+    public subscribedRooms?: Ref<Room>[];
+
+    @ApiModelProperty({
+        description: 'Current user room',
+        required: false,
+        example: ['Room2'],
+    })
+    @prop({ ref: () => Room, required: false })
+    public currentRoom?: Ref<Room>;
 
     @ApiModelProperty({
         description: 'UserCreated time stamp',

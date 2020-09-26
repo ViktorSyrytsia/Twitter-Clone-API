@@ -267,4 +267,19 @@ export class UsersService {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
+
+    public async enterToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId, socketId: string) {
+        return await this._usersRepository.enterToChatRoom(userId, roomId, socketId);
+    }
+
+    public async leaveFromChatRoom(userId: Types.ObjectId) {
+        return await this._usersRepository.leaveChatRoom(userId);
+    }
+
+    public async subscribeToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
+        return await this._usersRepository.subscribeToChatRoom(userId, roomId);
+    }
+    public async unsubscribeFromChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
+        return await this._usersRepository.unsubscribeChatRoom(userId, roomId);
+    }
 }

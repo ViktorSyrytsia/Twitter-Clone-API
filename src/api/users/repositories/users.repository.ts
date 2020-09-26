@@ -12,7 +12,7 @@ import { UploadsService } from '../../uploads/services/uploads.service';
 export class UsersRepository extends RepositoryBase<User> {
     protected _repository: ReturnModelType<typeof User>;
 
-    private _selectFields: string = '_id username firstName lastName avatar followers';
+    private _selectFields: string = '_id username firstName lastName avatar followers subscribedRooms currentRoom socketId';
 
     constructor(
         private _databaseConnection: DatabaseConnection,
@@ -182,6 +182,22 @@ export class UsersRepository extends RepositoryBase<User> {
             .lean();
 
         return this._addFields(updateUsert, principal);
+    }
+
+    public async enterToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId, socketId: string) {
+        return await this._repository.findByIdAndUpdate(userId, { currentRoom: roomId, socketId }, { new: true });
+    }
+
+    public async leaveChatRoom(userId: Types.ObjectId) {
+        return await this._repository.findByIdAndUpdate(userId, { currentRoom: null, socketId: null }, { new: true });
+    }
+
+    public async subscribeToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
+        return await this._repository.findByIdAndUpdate(userId, { $push: { subscribedRooms: roomId } }, { new: true });
+    }
+
+    public async unsubscribeChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
+        return await this._repository.findByIdAndUpdate(userId, { $pull: { subscribedRooms: roomId } }, { new: true });
     }
 
     public async activateUser(

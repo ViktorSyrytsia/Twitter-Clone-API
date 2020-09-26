@@ -15,7 +15,6 @@
   "license": "ISC",
   "dependencies": {
     "@typegoose/typegoose": "^7.3.2",
-    "@types/express-fileupload": "^1.1.5",
     "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
@@ -28,11 +27,15 @@
     "mongoose": "^5.10.0",
     "nodemailer": "^6.4.11",
     "reflect-metadata": "^0.1.13",
+    "socket.io": "^2.3.0",
+    "socket.io-encrypt": "^0.2.1",
     "swagger-express-typescript": "^1.0.2",
     "swagger-ui-dist": "^3.32.4",
     "uuidv4": "^6.2.3"
   },
   "devDependencies": {
+    "@types/express-fileupload": "^1.1.5",
+    "@types/socket.io": "^2.1.11",
     "@types/bcrypt": "^3.0.0",
     "@types/cors": "^2.8.7",
     "@types/dotenv": "^8.2.0",

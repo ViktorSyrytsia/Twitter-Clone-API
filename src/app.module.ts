@@ -7,6 +7,7 @@ import { AuthModule } from './api/auth/auth.module';
 import { TweetsModule } from './api/tweets/tweets.module';
 import { CommentsModule } from './api/comments/comment.module';
 import { UploadsModule } from './api/uploads/uploads.module';
+import { ChatModule } from './api/chat/chat.module';
 
 export const AppModule = new Container();
 AppModule.bind(App).to(App);
@@ -16,5 +17,6 @@ AppModule.load(
     UploadsModule,
     UsersModule,
     TweetsModule,
-    CommentsModule
+    CommentsModule,
+    ChatModule
 );
