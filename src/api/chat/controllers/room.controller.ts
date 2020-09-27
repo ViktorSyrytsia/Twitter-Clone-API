@@ -6,7 +6,7 @@ import {
     principal,
     response,
     httpGet,
-    queryParam, requestParam, httpPut
+    queryParam, requestParam, httpPut, httpDelete
 } from 'inversify-express-utils';
 import { Request, Response } from 'express';
 import {
@@ -26,7 +26,7 @@ import { DocumentUser } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
 import { Types } from 'mongoose';
 import { HttpError } from '../../../shared/models/http.error';
-import { BAD_REQUEST, METHOD_NOT_ALLOWED, NOT_FOUND } from 'http-status-codes';
+import { BAD_REQUEST, FORBIDDEN, METHOD_NOT_ALLOWED, NOT_FOUND } from 'http-status-codes';
 
 @ApiPath({
     path: '/api/v1/rooms/',
@@ -106,7 +106,7 @@ export class RoomController extends ControllerBase {
     }
 
     @httpGet('/:id')
-    public async findRoomBeId(
+    public async findRoomById(
         @requestParam('id') id: string,
         @request() req: Request,
         @response() res: Response
@@ -118,6 +118,55 @@ export class RoomController extends ControllerBase {
             const room: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(id));
             return this._success<{ room: DocumentRoom }>(res, 200, {
                 room
+            });
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @httpDelete('/:id')
+    public async deleteRoom(
+        @requestParam('id') id: string,
+        @request() req: Request,
+        @response() res: Response,
+        @principal() principal: Principal
+    ): Promise<Response> {
+        if (!id) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'));
+        }
+        try {
+            const roomToDelete: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(id));
+            if (!roomToDelete) {
+                return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
+            }
+            if (!((roomToDelete.creator as Types.ObjectId).equals(principal.details._id))) {
+                return this._fail(
+                    res,
+                    new HttpError(FORBIDDEN, 'Not a creator of a room')
+                );
+            }
+            const room: DocumentRoom = await this._roomService.deleteRoom(roomToDelete._id);
+            return this._success<{ room: DocumentRoom }>(res, 200, {
+                room
+            });
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @httpGet('/name/:name')
+    public async findRoomByName(
+        @requestParam('name') name: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        if (!name) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room name is missing'))
+        }
+        try {
+            const rooms: DocumentRoom[] = await this._roomService.findRoomByName(name);
+            return this._success<{ rooms: DocumentRoom[] }>(res, 200, {
+                rooms
             });
         } catch (error) {
             return this._fail(res, error);
@@ -147,7 +196,7 @@ export class RoomController extends ControllerBase {
         }
     }
 
-    @httpPut('/:id')
+    @httpPut('/invite/:id')
     public async inviteUser(
         @queryParam('userId') userId: string,
         @requestParam('id') id: string,
@@ -158,25 +207,24 @@ export class RoomController extends ControllerBase {
         if (!id) {
             return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
         }
+        if (!userId) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'))
+        }
         try {
-
             const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
-
             if (!user) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
             }
-            const room = await this._roomService.findRoomById(new Types.ObjectId(id));
+            let room = await this._roomService.findRoomById(new Types.ObjectId(id));
             if (!room) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
-
             if (room.creator !== null && room.creator === new Types.ObjectId('5f622978649dbb59d2632e04')) {
                 return this._fail(res, new HttpError(METHOD_NOT_ALLOWED, 'You have no rights to do so'));
             }
-            await this._userService.subscribeToChatRoom(user._id, room.id);
-            const updatedRoom = await this._roomService.subscribeToChatRoom(room.id, user._id);
+            room = await this._roomService.subscribeToChatRoom(room.id, user._id);
             return this._success<{ room: DocumentRoom }>(res, 200, {
-                room: updatedRoom
+                room
             });
         } catch (error) {
             return this._fail(res, error);
@@ -194,17 +242,16 @@ export class RoomController extends ControllerBase {
             return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
         }
         try {
-            const room = await this._roomService.findRoomById(new Types.ObjectId(id));
+            let room = await this._roomService.findRoomById(new Types.ObjectId(id));
             if (!room) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
             if (room.creator !== null) {
                 return this._fail(res, new HttpError(METHOD_NOT_ALLOWED, 'You have no rights to do so'));
             }
-            await this._userService.subscribeToChatRoom(new Types.ObjectId('5f6f10909747881d2e27cdd8'), room.id)
-            const updatedRoom = await this._roomService.subscribeToChatRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
+            room = await this._roomService.subscribeToChatRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
             return this._success<{ room: DocumentRoom }>(res, 200, {
-                room: updatedRoom
+                room
             });
         } catch (error) {
             return this._fail(res, error);
@@ -222,14 +269,13 @@ export class RoomController extends ControllerBase {
             return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
         }
         try {
-            const room = await this._roomService.findRoomById(new Types.ObjectId(id));
+            let room = await this._roomService.findRoomById(new Types.ObjectId(id));
             if (!room) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
-            await this._userService.unsubscribeFromChatRoom(new Types.ObjectId('5f6f10909747881d2e27cdd8'), room.id)
-            const updatedRoom = await this._roomService.unsubscribeFromRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
+            room = await this._roomService.unsubscribeFromRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
             return this._success<{ room: DocumentRoom }>(res, 200, {
-                room: updatedRoom
+                room
             });
         } catch (error) {
             return this._fail(res, error);

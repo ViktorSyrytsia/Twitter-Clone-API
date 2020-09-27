@@ -2,7 +2,6 @@ import { Server } from 'http';
 import { injectable } from 'inversify';
 import { Types } from 'mongoose';
 import * as socketIo from 'socket.io';
-import * as encrypt from 'socket.io-encrypt';
 import { DocumentUser } from '../../users/models/user.model';
 
 import { UsersService } from '../../users/services/users.service';
@@ -24,30 +23,35 @@ export class WebSocketController {
 
     public listenSocket(server: Server) {
         this._socketServer = socketIo(server);
-        this._socketServer.use(encrypt('secret'));
         this._socketServer.on('connection', (socket: SocketIO.Socket) => {
-            console.log('User connected:', socket.id);
-            socket.on('ROOM:JOIN', async ({ roomId, userId }) => {
+            console.log('User connected: sockeId:', socket.id);
+
+            socket.on('USER:CONNECT', async ({ userId }) => {
                 try {
-                    const user = await this._userService.findById(userId);
+                    const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
                     if (!user) {
                         throw new Error('User not found!')
                     }
+                    await this._websocketService.userConnect(this._socketServer, socket, user);
+                } catch (error) {
+                    this._socketServer.in(socket.id).emit('connect_error', error.message);
+                }
+            })
+
+            socket.on('ROOM:ENTER', async ({ roomId, userId }) => {
+                try {
                     const room = await this._roomService.findRoomById(roomId);
                     if (!room) {
                         throw new Error('Room not found')
                     }
-                    const isSubscribe = user.subscribedRooms.find(room => room.toString() === roomId.toString())
-                    if (!isSubscribe) {
-                        throw new Error('You do not have permission to log in');
+                    const user = await this._userService.findById(userId);
+                    if (!user) {
+                        throw new Error('User not found!')
                     }
-
-                    await this._websocketService.roomJoin(
-                        socket,
-                        this._socketServer,
-                        room._id,
-                        user._id,
-                    );
+                    if (!room.subscribers.includes(user._id)) {
+                        throw new Error('You do not have permission to do this');
+                    }
+                    await this._websocketService.roomEnter(this._socketServer, room._id, user._id,);
                 } catch (error) {
                     this._socketServer.in(socket.id).emit('connect_error', error.message);
                 }
@@ -55,27 +59,22 @@ export class WebSocketController {
 
             socket.on('ROOM:LEAVE', async ({ roomId, userId }) => {
                 try {
-                    const user = await this._userService.findById(userId);
-                    if (!user) {
-                        throw new Error('User not found!')
-                    }
                     const room = await this._roomService.findRoomById(roomId);
                     if (!room) {
                         throw new Error('Room not found')
                     }
-                    await this._websocketService.roomLeave(
-                        socket,
-                        this._socketServer,
-                        room._id,
-                        user._id,
-                    );
+                    const user = await this._userService.findById(userId);
+                    if (!user) {
+                        throw new Error('User not found')
+                    }
+                    await this._websocketService.roomLeave(this._socketServer, room._id, user._id,);
                 } catch (error) {
                     this._socketServer.in(socket.id).emit('connect_error', error.message);
                 }
             });
 
             socket.on(
-                'ROOM:NEW_MESSAGE',
+                'MESSAGE:NEW',
                 async ({ roomId, userId, messageBody }) => {
                     try {
                         const room: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(roomId));
@@ -86,12 +85,10 @@ export class WebSocketController {
                         if (!user) {
                             throw new Error('User not found');
                         }
-                        await this._websocketService.messageNew(
-                            this._socketServer,
-                            new Types.ObjectId(roomId),
-                            new Types.ObjectId(userId),
-                            messageBody
-                        );
+                        if (!room.subscribers.includes(user._id)) {
+                            throw new Error('You do not have permission to do this');
+                        }
+                        await this._websocketService.messageNew(this._socketServer, new Types.ObjectId(roomId), new Types.ObjectId(userId), messageBody);
                     } catch (error) {
                         this._socketServer.in(socket.id).emit('connect_error', error.message);
                     }
@@ -99,21 +96,24 @@ export class WebSocketController {
                 }
             );
 
-            socket.on('ROOM:DELETE_MESSAGE', async ({ roomId, messageId }) => {
+            socket.on('MESSAGE:DELETE', async ({ roomId, userId, messageId }) => {
                 try {
                     const room: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(roomId));
                     if (!room) {
                         throw new Error('Room not found');
                     }
+                    const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
+                    if (!user) {
+                        throw new Error('User not found');
+                    }
                     const message: DocumentMessage = await this._messageService.findMessageById(new Types.ObjectId(roomId));
                     if (!message) {
                         throw new Error('Message not found');
                     }
-                    await this._websocketService.messageDelete(
-                        this._socketServer,
-                        new Types.ObjectId(roomId),
-                        new Types.ObjectId(messageId)
-                    );
+                    if (!room.subscribers.includes(user._id)) {
+                        throw new Error('You do not have permission to do this');
+                    }
+                    await this._websocketService.messageDelete(this._socketServer, new Types.ObjectId(roomId), new Types.ObjectId(messageId));
                 } catch (error) {
                     this._socketServer.in(socket.id).emit('connect_error', error.message);
                 }
@@ -121,30 +121,28 @@ export class WebSocketController {
             });
 
             socket.on(
-                'ROOM:EDIT_MESSAGE',
+                'MESSAGE:EDIT',
                 async ({ roomId, userId, messageId, newMessageBody }) => {
                     try {
                         const room: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(roomId));
                         if (!room) {
                             throw new Error('Room not found');
                         }
-                        const message: DocumentMessage = await this._messageService.findMessageById(new Types.ObjectId(roomId));
-                        if (!message) {
-                            throw new Error('Message not found');
-                        }
                         const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
                         if (!user) {
                             throw new Error('User not found');
                         }
+                        const message: DocumentMessage = await this._messageService.findMessageById(new Types.ObjectId(roomId));
+                        if (!message) {
+                            throw new Error('Message not found');
+                        }
+                        if (!room.subscribers.includes(user._id)) {
+                            throw new Error('You do not have permission to do this');
+                        }
                         if (message.author !== user._id) {
                             throw new Error('You do not have permission to edit this message');
                         }
-                        await this._websocketService.messageEdit(
-                            this._socketServer,
-                            new Types.ObjectId(roomId),
-                            new Types.ObjectId(messageId),
-                            newMessageBody
-                        );
+                        await this._websocketService.messageEdit(this._socketServer, new Types.ObjectId(roomId), new Types.ObjectId(messageId), newMessageBody);
                     } catch (error) {
                         this._socketServer.in(socket.id).emit('connect_error', error.message);
                     }
@@ -152,12 +150,18 @@ export class WebSocketController {
                 }
             );
 
-            // socket.on('disconnect', async () => {
-            //     await this._websocketService.disconect(
-            //         this._socketServer,
-            //         socket
-            //     );
-            // });
+            socket.on('disconnect', async () => {
+                try {
+                    const user: DocumentUser = await this._userService.findUserBySocket(socket.id)
+                    if (!user) {
+                        throw new Error('User not found');
+                    }
+                    await this._websocketService.userDisconnect(this._socketServer, socket, user);
+                } catch (error) {
+                    this._socketServer.in(socket.id).emit('connect_error', error.message);
+                }
+
+            });
         });
     }
 }

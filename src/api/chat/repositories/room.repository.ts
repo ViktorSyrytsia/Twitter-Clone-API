@@ -15,27 +15,37 @@ export class RoomRepository extends RepositoryBase<Room> {
         this.initRepository(this._databaseConnection, Room);
     }
     public async createRoom(room: CreateQuery<Room>): Promise<DocumentRoom> {
-        return this._repository.create(room);
+        return await this._repository.create(room);
     }
 
     public async deleteRoom(roomId: Types.ObjectId): Promise<DocumentRoom> {
-        return this._repository.findByIdAndDelete(roomId);
+        return await this._repository.findByIdAndDelete(roomId);
     }
 
     public async findAll(skip: number, limit: number): Promise<DocumentRoom[]> {
         const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find();
-        return this._addLazyLoadAndModify(findRoomsQuery, skip, limit)
+        return await this._addLazyLoadAndModify(findRoomsQuery, skip, limit)
     }
 
     public async findById(roomId: Types.ObjectId): Promise<DocumentRoom> {
         return this._repository.findById(roomId).populate('users');
     }
 
-    public async enterToRoom(
-        roomId: Types.ObjectId,
-        userId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
+    public async findByName(roomName: string): Promise<DocumentRoom[]> {
+        return await this._repository.find({
+            name: {
+                $regex: roomName,
+                $options: 'i',
+            },
+        })
+    }
+
+    public async findRoomsBySubscriber(userId: Types.ObjectId): Promise<DocumentRoom[]> {
+        return await this._repository.find({ subscribers: [userId] });
+    }
+
+    public async enterToRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
+        return await this._repository
             .findByIdAndUpdate(
                 roomId,
                 {
@@ -47,11 +57,8 @@ export class RoomRepository extends RepositoryBase<Room> {
             )
     }
 
-    public async leaveFromRoom(
-        roomId: Types.ObjectId,
-        userId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
+    public async leaveFromRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
+        return await this._repository
             .findByIdAndUpdate(
                 { _id: roomId },
                 {
@@ -63,69 +70,30 @@ export class RoomRepository extends RepositoryBase<Room> {
             )
     }
 
-    public async subscribeToRoom(
-        roomId: Types.ObjectId,
-        userId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
+    public async subscribeToRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
+        return await this._repository
             .findByIdAndUpdate(
                 roomId,
                 {
                     $push: {
-                        users: userId,
+                        subscribers: userId,
                     },
                 },
                 { new: true }
             )
     }
-    public async unsubscribeFromRoom(
-        roomId: Types.ObjectId,
-        userId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
+    public async unsubscribeFromRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
+        return await this._repository
             .findByIdAndUpdate(
                 roomId,
                 {
                     $pull: {
-                        users: userId,
+                        subscribers: userId,
                     },
                 },
                 { new: true }
             )
             .populate('users');
-    }
-
-    public async addMessageToRoom(
-        roomId: Types.ObjectId,
-        messageId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
-            .findByIdAndUpdate(
-                { _id: roomId },
-                {
-                    $push: {
-                        messages: messageId,
-                    },
-                },
-                { new: true }
-            )
-    }
-
-
-    public async deleteMessageFromRoom(
-        roomId: Types.ObjectId,
-        messageId: Types.ObjectId
-    ): Promise<DocumentRoom> {
-        return this._repository
-            .findByIdAndUpdate(
-                { _id: roomId },
-                {
-                    $pull: {
-                        messages: messageId,
-                    },
-                },
-                { new: true }
-            )
     }
 
     private async _addLazyLoadAndModify(

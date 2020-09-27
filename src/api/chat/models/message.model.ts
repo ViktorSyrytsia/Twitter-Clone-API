@@ -41,7 +41,15 @@ export class Message extends Base {
         example: ['20200801'],
     })
     @prop({ required: false, default: Date.now() })
-    public createdAt: number;
+    public createdAt?: number;
+
+    @ApiModelProperty({
+        description: 'Message update time stamp',
+        required: false,
+        example: ['20200880'],
+    })
+    @prop({ required: false, default: Date.now() })
+    public updatedAt?: number;
 
     constructor(message: CreateQuery<Message>) {
         super();

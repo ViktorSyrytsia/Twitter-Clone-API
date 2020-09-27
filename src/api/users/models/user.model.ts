@@ -88,28 +88,12 @@ export class User extends Base {
     public followers?: Ref<User>[];
 
     @ApiModelProperty({
-        description: 'User Socket id',
+        description: 'User Socket id (if socketId == null => user is offline, if socketId !== null => user is online)',
         required: false,
         example: ['SocketId'],
     })
     @prop({ required: false })
-    public socketId?: string;
-
-    @ApiModelProperty({
-        description: 'Rooms to which the user is subscribed',
-        required: false,
-        example: ['Room1, Room2'],
-    })
-    @prop({ ref: () => Room, required: false })
-    public subscribedRooms?: Ref<Room>[];
-
-    @ApiModelProperty({
-        description: 'Current user room',
-        required: false,
-        example: ['Room2'],
-    })
-    @prop({ ref: () => Room, required: false })
-    public currentRoom?: Ref<Room>;
+    public socketId?: string | null;
 
     @ApiModelProperty({
         description: 'UserCreated time stamp',

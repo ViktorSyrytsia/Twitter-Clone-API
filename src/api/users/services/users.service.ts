@@ -268,18 +268,19 @@ export class UsersService {
         }
     }
 
-    public async enterToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId, socketId: string) {
-        return await this._usersRepository.enterToChatRoom(userId, roomId, socketId);
+    public async findUserBySocket(socketId: string): Promise<DocumentUser> {
+        try {
+            return await this._usersRepository.findBySocket(socketId);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
     }
 
-    public async leaveFromChatRoom(userId: Types.ObjectId) {
-        return await this._usersRepository.leaveChatRoom(userId);
-    }
-
-    public async subscribeToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
-        return await this._usersRepository.subscribeToChatRoom(userId, roomId);
-    }
-    public async unsubscribeFromChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
-        return await this._usersRepository.unsubscribeChatRoom(userId, roomId);
+    public async updateConnection(userId: Types.ObjectId, socketId: string): Promise<DocumentUser> {
+        try {
+            return await this._usersRepository.updateConnection(userId, socketId);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
+        }
     }
 }

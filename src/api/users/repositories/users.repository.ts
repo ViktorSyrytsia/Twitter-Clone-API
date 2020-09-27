@@ -184,20 +184,12 @@ export class UsersRepository extends RepositoryBase<User> {
         return this._addFields(updateUsert, principal);
     }
 
-    public async enterToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId, socketId: string) {
-        return await this._repository.findByIdAndUpdate(userId, { currentRoom: roomId, socketId }, { new: true });
+    public async updateConnection(userId: Types.ObjectId, socketId: string): Promise<DocumentUser> {
+        return await this._repository.findByIdAndUpdate(userId, { socketId }, { new: true });
     }
 
-    public async leaveChatRoom(userId: Types.ObjectId) {
-        return await this._repository.findByIdAndUpdate(userId, { currentRoom: null, socketId: null }, { new: true });
-    }
-
-    public async subscribeToChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
-        return await this._repository.findByIdAndUpdate(userId, { $push: { subscribedRooms: roomId } }, { new: true });
-    }
-
-    public async unsubscribeChatRoom(userId: Types.ObjectId, roomId: Types.ObjectId) {
-        return await this._repository.findByIdAndUpdate(userId, { $pull: { subscribedRooms: roomId } }, { new: true });
+    public async findBySocket(socketId: string): Promise<DocumentUser> {
+        return await this._repository.findOne({ socketId });
     }
 
     public async activateUser(

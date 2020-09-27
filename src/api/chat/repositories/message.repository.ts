@@ -33,9 +33,9 @@ export class MessageRepository extends RepositoryBase<Message> {
 
     public async updateMessage(
         messageId: Types.ObjectId,
-        messageBody: string
+        message: UpdateQuery<Message>
     ): Promise<DocumentMessage> {
-        return this._repository.findByIdAndUpdate(messageId, { body: messageBody }, {
+        return this._repository.findByIdAndUpdate(messageId, { ...message }, {
             new: true,
         });
     }
