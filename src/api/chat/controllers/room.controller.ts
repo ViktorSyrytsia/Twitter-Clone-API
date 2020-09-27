@@ -112,7 +112,7 @@ export class RoomController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         if (!id) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'));
         }
         try {
             const room: DocumentRoom = await this._roomService.findRoomById(new Types.ObjectId(id));
@@ -161,7 +161,7 @@ export class RoomController extends ControllerBase {
         @response() res: Response
     ): Promise<Response> {
         if (!name) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room name is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room name is missing'));
         }
         try {
             const rooms: DocumentRoom[] = await this._roomService.findRoomByName(name);
@@ -187,7 +187,7 @@ export class RoomController extends ControllerBase {
                     return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
                 }
             }
-            const room = await this._roomService.createRoom(new Types.ObjectId("5f622978649dbb59d2632e04"), body.roomName, body.isPublic, body.userToAdd)
+            const room = await this._roomService.createRoom(new Types.ObjectId('5f622978649dbb59d2632e04'), body.roomName, body.isPublic, body.userToAdd);
             return this._success<{ room: DocumentRoom }>(res, 200, {
                 room
             });
@@ -205,10 +205,10 @@ export class RoomController extends ControllerBase {
         @principal() principal: Principal,
     ): Promise<Response> {
         if (!id) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'));
         }
         if (!userId) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'User id is missing'));
         }
         try {
             const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
@@ -239,7 +239,7 @@ export class RoomController extends ControllerBase {
         @principal() principal: Principal,
     ): Promise<Response> {
         if (!id) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'));
         }
         try {
             let room = await this._roomService.findRoomById(new Types.ObjectId(id));
@@ -266,7 +266,7 @@ export class RoomController extends ControllerBase {
         @principal() principal: Principal,
     ): Promise<Response> {
         if (!id) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'))
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room id is missing'));
         }
         try {
             let room = await this._roomService.findRoomById(new Types.ObjectId(id));

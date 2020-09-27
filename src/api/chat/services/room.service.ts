@@ -26,7 +26,7 @@ export class RoomService {
             } else {
                 room = await this._roomRepository.createRoom(new Room({ creator: creatorId, name: roomName }));
             }
-            await this._roomRepository.subscribeToRoom(room.id, creatorId)
+            await this._roomRepository.subscribeToRoom(room.id, creatorId);
             if (userToAdd) {
                 await this._roomRepository.subscribeToRoom(room.id, userToAdd);
             }
@@ -56,7 +56,7 @@ export class RoomService {
         try {
             return this._roomRepository.findAll(skip, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
@@ -64,7 +64,7 @@ export class RoomService {
         try {
             return this._roomRepository.findRoomsBySubscriber(userId);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
@@ -72,7 +72,7 @@ export class RoomService {
         try {
             return await this._roomRepository.enterToRoom(roomId, userId);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -80,7 +80,7 @@ export class RoomService {
         try {
             return this._roomRepository.leaveFromRoom(roomId, userId);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -88,7 +88,7 @@ export class RoomService {
         try {
             return await this._roomRepository.subscribeToRoom(roomId, userId);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
 
     }
@@ -97,7 +97,7 @@ export class RoomService {
         try {
             return await this._roomRepository.unsubscribeFromRoom(roomId, userId);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 

@@ -21,7 +21,7 @@ export class WebSocketService {
             const connectedUser: DocumentUser = await this._usersService.updateConnection(user._id, socket.id);
             socketServer.emit('USER:CONNECTED', connectedUser);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -29,11 +29,11 @@ export class WebSocketService {
         try {
             let room: DocumentRoom = await this._roomService.findRoomById(roomId);
             if (!room.usersOnline.includes(userId)) {
-                room = await this._roomService.enterToChatRoom(roomId, userId)
+                room = await this._roomService.enterToChatRoom(roomId, userId);
             }
             socketServer.in(roomId.toString()).emit('ROOM:SET_USERS', room.usersOnline);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -42,7 +42,7 @@ export class WebSocketService {
             const room: DocumentRoom = await this._roomService.leaveFromChatRoom(roomId, userId);
             socketServer.in(roomId.toString()).emit('ROOM:SET_USERS', room.usersOnline);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -51,7 +51,7 @@ export class WebSocketService {
             const newMessage: DocumentMessage = await this._messageService.createNewMessage(userId, roomId, messageBody);
             socketServer.in(roomId.toString()).emit('MESSAGE:NEW', newMessage);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -60,7 +60,7 @@ export class WebSocketService {
             await this._messageService.deleteMessage(messageId);
             socketServer.in(roomId.toString()).emit('MESSAGE:DELETE', 'Message deleted');
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -69,7 +69,7 @@ export class WebSocketService {
             const editedMessage: DocumentMessage = await this._messageService.editMessage(messageId, messageBody);
             socketServer.in(roomId.toString()).emit('MESSAGE:EDIT', editedMessage);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 
@@ -82,7 +82,7 @@ export class WebSocketService {
             const disconnectedUser: DocumentUser = await this._usersService.updateConnection(user._id, null);
             socketServer.emit('USER:DISCONNECTED', disconnectedUser);
         } catch (error) {
-            throw new Error(error.message)
+            throw new Error(error.message);
         }
     }
 }

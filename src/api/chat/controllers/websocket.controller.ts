@@ -30,23 +30,23 @@ export class WebSocketController {
                 try {
                     const user: DocumentUser = await this._userService.findById(new Types.ObjectId(userId));
                     if (!user) {
-                        throw new Error('User not found!')
+                        throw new Error('User not found!');
                     }
                     await this._websocketService.userConnect(this._socketServer, socket, user);
                 } catch (error) {
                     this._socketServer.in(socket.id).emit('connect_error', error.message);
                 }
-            })
+            });
 
             socket.on('ROOM:ENTER', async ({ roomId, userId }) => {
                 try {
                     const room = await this._roomService.findRoomById(roomId);
                     if (!room) {
-                        throw new Error('Room not found')
+                        throw new Error('Room not found');
                     }
                     const user = await this._userService.findById(userId);
                     if (!user) {
-                        throw new Error('User not found!')
+                        throw new Error('User not found!');
                     }
                     if (!room.subscribers.includes(user._id)) {
                         throw new Error('You do not have permission to do this');
@@ -61,11 +61,11 @@ export class WebSocketController {
                 try {
                     const room = await this._roomService.findRoomById(roomId);
                     if (!room) {
-                        throw new Error('Room not found')
+                        throw new Error('Room not found');
                     }
                     const user = await this._userService.findById(userId);
                     if (!user) {
-                        throw new Error('User not found')
+                        throw new Error('User not found');
                     }
                     await this._websocketService.roomLeave(this._socketServer, room._id, user._id,);
                 } catch (error) {
@@ -152,7 +152,7 @@ export class WebSocketController {
 
             socket.on('disconnect', async () => {
                 try {
-                    const user: DocumentUser = await this._userService.findUserBySocket(socket.id)
+                    const user: DocumentUser = await this._userService.findUserBySocket(socket.id);
                     if (!user) {
                         throw new Error('User not found');
                     }
