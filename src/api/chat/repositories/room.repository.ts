@@ -19,16 +19,16 @@ export class RoomRepository extends RepositoryBase<Room> {
     }
 
     public async deleteRoom(roomId: Types.ObjectId): Promise<DocumentRoom> {
-        return await this._repository.findByIdAndDelete(roomId);
+        return await this._repository.findByIdAndDelete(roomId).lean();
     }
 
     public async findAll(skip: number, limit: number): Promise<DocumentRoom[]> {
-        const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find();
+        const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find().sort({ createdAt: -1 });;
         return await this._addLazyLoadAndModify(findRoomsQuery, skip, limit);
     }
 
     public async findById(roomId: Types.ObjectId): Promise<DocumentRoom> {
-        return this._repository.findById(roomId).populate('users');
+        return await this._repository.findById(roomId).lean();
     }
 
     public async findByName(roomName: string): Promise<DocumentRoom[]> {
@@ -37,11 +37,11 @@ export class RoomRepository extends RepositoryBase<Room> {
                 $regex: roomName,
                 $options: 'i',
             },
-        });
+        }).lean();
     }
 
     public async findRoomsBySubscriber(userId: Types.ObjectId): Promise<DocumentRoom[]> {
-        return await this._repository.find({ subscribers: [userId] });
+        return await this._repository.find({ subscribers: [userId] }).lean();
     }
 
     public async enterToRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
@@ -54,7 +54,8 @@ export class RoomRepository extends RepositoryBase<Room> {
                     },
                 },
                 { new: true }
-            );
+            )
+            .lean();
     }
 
     public async leaveFromRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
@@ -67,7 +68,8 @@ export class RoomRepository extends RepositoryBase<Room> {
                     },
                 },
                 { new: true }
-            );
+            )
+            .lean();
     }
 
     public async subscribeToRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
@@ -80,7 +82,8 @@ export class RoomRepository extends RepositoryBase<Room> {
                     },
                 },
                 { new: true }
-            );
+            )
+            .lean();
     }
     public async unsubscribeFromRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {
         return await this._repository
@@ -93,7 +96,7 @@ export class RoomRepository extends RepositoryBase<Room> {
                 },
                 { new: true }
             )
-            .populate('users');
+            .lean();
     }
 
     private async _addLazyLoadAndModify(
@@ -101,8 +104,6 @@ export class RoomRepository extends RepositoryBase<Room> {
         skip?: number,
         limit?: number
     ): Promise<DocumentRoom[]> {
-        findRoomsQuery.sort({ createdAt: -1 });
-
         if (skip) {
             findRoomsQuery = findRoomsQuery.skip(skip);
         }

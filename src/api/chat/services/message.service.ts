@@ -1,5 +1,8 @@
+import { INTERNAL_SERVER_ERROR } from 'http-status-codes';
 import { injectable } from 'inversify';
 import { Types } from 'mongoose';
+import { HttpError } from '../../../shared/models/http.error';
+import { Principal } from '../../auth/models/principal.model';
 
 import { DocumentMessage } from '../models/message.model';
 import { MessageRepository } from '../repositories/message.repository';
@@ -44,4 +47,14 @@ export class MessageService {
             throw new Error(error.message);
         }
     }
+
+    public async findMessagesByRoom(roomId: Types.ObjectId, limit: number, principal?: Principal): Promise<DocumentMessage[]> {
+        try {
+            return this._messageRepository.findAllInRoom(roomId, limit);
+        } catch (error) {
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+        }
+    }
+
+
 }

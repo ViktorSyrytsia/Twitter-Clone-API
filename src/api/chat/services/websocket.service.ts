@@ -57,8 +57,8 @@ export class WebSocketService {
 
     public async messageDelete(socketServer: SocketIO.Server, roomId: Types.ObjectId, messageId: Types.ObjectId): Promise<void> {
         try {
-            await this._messageService.deleteMessage(messageId);
-            socketServer.in(roomId.toString()).emit('MESSAGE:DELETE', 'Message deleted');
+            const deletedMessage: DocumentMessage = await this._messageService.deleteMessage(messageId);
+            socketServer.in(roomId.toString()).emit('MESSAGE:DELETE', deletedMessage);
         } catch (error) {
             throw new Error(error.message);
         }

@@ -40,7 +40,7 @@ export class Message extends Base {
         required: false,
         example: ['20200801'],
     })
-    @prop({ required: false, default: Date.now() })
+    @prop({ required: false, default: Date.now })
     public createdAt?: number;
 
     @ApiModelProperty({
@@ -48,7 +48,7 @@ export class Message extends Base {
         required: false,
         example: ['20200880'],
     })
-    @prop({ required: false, default: Date.now() })
+    @prop({ required: false, default: Date.now })
     public updatedAt?: number;
 
     constructor(message: CreateQuery<Message>) {

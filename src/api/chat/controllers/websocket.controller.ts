@@ -24,7 +24,6 @@ export class WebSocketController {
     public listenSocket(server: Server) {
         this._socketServer = socketIo(server);
         this._socketServer.on('connection', (socket: SocketIO.Socket) => {
-            console.log('User connected: sockeId:', socket.id);
 
             socket.on('USER:CONNECT', async ({ userId }) => {
                 try {

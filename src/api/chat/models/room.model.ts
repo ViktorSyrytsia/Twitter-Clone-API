@@ -27,7 +27,7 @@ export class Room extends Base {
     public creator: Ref<User> | null;
 
     @ApiModelProperty({
-        description: 'Room`s users',
+        description: 'Room`s subscribers',
         required: false,
         example: [['ObjectId1, ObjectId2']],
     })
@@ -35,7 +35,7 @@ export class Room extends Base {
     public subscribers?: Ref<User>[];
 
     @ApiModelProperty({
-        description: 'Room`s users',
+        description: 'Current online user in this room',
         required: false,
         example: [['ObjectId1, ObjectId2']],
     })
@@ -43,11 +43,11 @@ export class Room extends Base {
     public usersOnline?: Ref<User>[];
 
     @ApiModelProperty({
-        description: 'Room time stamp',
+        description: 'Room creation time stamp',
         required: false,
         example: ['20200801'],
     })
-    @prop({ required: false, default: Date.now() })
+    @prop({ required: false, default: Date.now })
     public createdAt?: number;
 
 
@@ -56,7 +56,7 @@ export class Room extends Base {
         required: false,
         example: ['20200890'],
     })
-    @prop({ required: false, default: Date.now() })
+    @prop({ required: false, default: Date.now })
     public updatedAt?: number;
 
     constructor(room: CreateQuery<Room>) {
