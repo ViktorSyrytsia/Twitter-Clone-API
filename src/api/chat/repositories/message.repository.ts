@@ -60,7 +60,7 @@ export class MessageRepository extends RepositoryBase<Message> {
         if (limit) {
             findMessagesQuery = findMessagesQuery.limit(limit);
         }
-        return findMessagesQuery.lean()
+        return findMessagesQuery.lean();
     }
 
 }

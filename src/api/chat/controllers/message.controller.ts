@@ -81,7 +81,7 @@ export class MessageController extends ControllerBase {
             const messages: DocumentMessage[] = await this._messageService.findMessagesByRoom(
                 room.id,
                 Number.parseInt(limit)
-            )
+            );
             return this._success<{ messages: DocumentMessage[] }>(res, 200, {
                 messages,
             });

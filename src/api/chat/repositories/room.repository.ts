@@ -23,7 +23,7 @@ export class RoomRepository extends RepositoryBase<Room> {
     }
 
     public async findAll(skip: number, limit: number): Promise<DocumentRoom[]> {
-        const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find().sort({ createdAt: -1 });;
+        const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find().sort({ createdAt: -1 });
         return await this._addLazyLoadAndModify(findRoomsQuery, skip, limit);
     }
 

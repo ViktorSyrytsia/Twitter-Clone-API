@@ -1,32 +1,19 @@
-import {
-    controller,
-    httpPost,
-    request,
-    requestBody,
-    principal,
-    response,
-    httpGet,
-    queryParam, requestParam, httpPut, httpDelete
-} from 'inversify-express-utils';
 import { Request, Response } from 'express';
-import {
-    ApiPath,
-    ApiOperationGet,
-    SwaggerDefinitionConstant,
-    ApiOperationDelete,
-    ApiOperationPut,
-    ApiOperationPost,
-} from 'swagger-express-typescript';
+import { BAD_REQUEST, FORBIDDEN, NOT_FOUND } from 'http-status-codes';
+import { controller, httpDelete, httpGet, httpPost, httpPut, principal, queryParam, request, requestBody, requestParam, response } from 'inversify-express-utils';
+import { Types } from 'mongoose';
+import { ApiOperationDelete, ApiOperationGet, ApiOperationPost, ApiOperationPut, ApiPath, SwaggerDefinitionConstant } from 'swagger-express-typescript';
 
-import { ControllerBase } from '../../base/controller.base';
-import { RoomService } from '../services/room.service';
-import { DocumentRoom } from '../models/room.model';
+import { HttpError } from '../../../shared/models/http.error';
+import { ActivatedUserMiddleware } from '../../auth/middlewares/activated.user.middleware';
+import { AuthMiddleware } from '../../auth/middlewares/auth.middleware';
 import { Principal } from '../../auth/models/principal.model';
+import { ControllerBase } from '../../base/controller.base';
 import { DocumentUser } from '../../users/models/user.model';
 import { UsersService } from '../../users/services/users.service';
-import { Types } from 'mongoose';
-import { HttpError } from '../../../shared/models/http.error';
-import { BAD_REQUEST, FORBIDDEN, METHOD_NOT_ALLOWED, NOT_FOUND } from 'http-status-codes';
+import { DocumentRoom } from '../models/room.model';
+import { RoomService } from '../services/room.service';
+
 
 @ApiPath({
     path: '/api/v1/rooms/',
@@ -43,7 +30,7 @@ export class RoomController extends ControllerBase {
     }
     @ApiOperationGet({
         description: 'Find all chat rooms, using lazy load',
-        summary: 'Find all rooms',
+        summary: 'Get rooms array',
         parameters: {
             query: {
                 skip: {
@@ -70,19 +57,11 @@ export class RoomController extends ControllerBase {
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
                 model: 'Room',
             },
-            401: {
-                description: 'Fail / unauthorized',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Room',
-            },
-            404: {
-                description: 'Fail / rooms not found',
-                type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Room',
-            },
-        },
-        security: {
-            apiKeyHeader: [],
+            500: {
+                description: 'Cannot find rooms',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
         },
     })
     @httpGet('/')
@@ -105,6 +84,136 @@ export class RoomController extends ControllerBase {
         }
     }
 
+    @ApiOperationPost({
+        description: 'Create new chat room object and subscribe to it',
+        summary: 'Create new room',
+        path: '/',
+        parameters: {
+            body: {
+                description: 'Room body parameters',
+                required: true,
+                properties: {
+                    roomName: {
+                        description: 'Name of the new chat room',
+                        name: 'roomName',
+                        required: true,
+                        allowEmptyValue: false,
+                        type: SwaggerDefinitionConstant.Parameter.Type.STRING
+                    },
+                    isPublic: {
+                        description: 'If the new room is public, than isPublic=true, else if room is private isPublic=false',
+                        name: 'isPublic',
+                        required: true,
+                        allowEmptyValue: false,
+                        type: SwaggerDefinitionConstant.Parameter.Type.BOOLEAN
+                    },
+                    userToAdd: {
+                        description: 'The user id with whom you want to create a new room',
+                        name: 'userToAdd',
+                        required: false,
+                        allowEmptyValue: true,
+                        type: SwaggerDefinitionConstant.Parameter.Type.STRING
+                    }
+                }
+            }
+        },
+        responses: {
+            201: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room'
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'User not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot create room',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpPost('/', AuthMiddleware, ActivatedUserMiddleware)
+    public async createRoomAndSubscribe(
+        @requestBody() body: { roomName: string, isPublic: boolean, userToAdd?: Types.ObjectId },
+        @request() req: Request,
+        @response() res: Response,
+        @principal() principal: Principal,
+    ): Promise<Response> {
+        try {
+            if (body.userToAdd) {
+                const user: DocumentUser = await this._userService.findById(body.userToAdd);
+                if (!user) {
+                    return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
+                }
+            }
+            const room = await this._roomService.createRoom(principal.details._id, body.roomName, body.isPublic, body.userToAdd);
+            return this._success<{ room: DocumentRoom }>(res, 200, {
+                room
+            });
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationGet({
+        description: 'Find  chat room by id',
+        summary: 'Get room by id',
+        path: '/{id}',
+        parameters: {
+            path: {
+                id: {
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    name: 'id',
+                    allowEmptyValue: false,
+                    description: 'Id of room',
+                    required: true
+                }
+            },
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room',
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot find room',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
+        },
+    })
     @httpGet('/:id')
     public async findRoomById(
         @requestParam('id') id: string,
@@ -124,7 +233,115 @@ export class RoomController extends ControllerBase {
         }
     }
 
-    @httpDelete('/:id')
+    @ApiOperationGet({
+        description: 'Find  chat room by name',
+        summary: 'Get room by name',
+        path: '/name/{name}',
+        parameters: {
+            path: {
+                name: {
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    name: 'name',
+                    allowEmptyValue: false,
+                    description: 'name of room',
+                    required: true
+                }
+            },
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room',
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot find room',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            }
+        },
+    })
+    @httpGet('/name/:name')
+    public async findRoomByName(
+        @requestParam('name') name: string,
+        @request() req: Request,
+        @response() res: Response
+    ): Promise<Response> {
+        if (!name) {
+            return this._fail(res, new HttpError(BAD_REQUEST, 'Room name is missing'));
+        }
+        try {
+            const rooms: DocumentRoom[] = await this._roomService.findRoomByName(name);
+            return this._success<{ rooms: DocumentRoom[] }>(res, 200, {
+                rooms
+            });
+        } catch (error) {
+            return this._fail(res, error);
+        }
+    }
+
+    @ApiOperationDelete({
+        description: 'Delete room object',
+        summary: 'Delete room',
+        path: '/{id}',
+        parameters: {
+            path: {
+                id: {
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    name: 'id',
+                    allowEmptyValue: false,
+                    description: 'Id of room to delete',
+                    required: true
+                }
+            },
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room'
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated | Not room author',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot delete room',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpDelete('/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async deleteRoom(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -154,49 +371,67 @@ export class RoomController extends ControllerBase {
         }
     }
 
-    @httpGet('/name/:name')
-    public async findRoomByName(
-        @requestParam('name') name: string,
-        @request() req: Request,
-        @response() res: Response
-    ): Promise<Response> {
-        if (!name) {
-            return this._fail(res, new HttpError(BAD_REQUEST, 'Room name is missing'));
-        }
-        try {
-            const rooms: DocumentRoom[] = await this._roomService.findRoomByName(name);
-            return this._success<{ rooms: DocumentRoom[] }>(res, 200, {
-                rooms
-            });
-        } catch (error) {
-            return this._fail(res, error);
-        }
-    }
-
-    @httpPost('/')
-    public async createRoomAndSubscribe(
-        @requestBody() body: { roomName: string, isPublic: boolean, userToAdd?: Types.ObjectId },
-        @request() req: Request,
-        @response() res: Response,
-        @principal() principal: Principal,
-    ): Promise<Response> {
-        try {
-            if (body.userToAdd) {
-                const user: DocumentUser = await this._userService.findById(body.userToAdd);
-                if (!user) {
-                    return this._fail(res, new HttpError(NOT_FOUND, 'User not found'));
+    @ApiOperationPut({
+        description: 'Invite user to the chat room',
+        summary: 'Room invite',
+        path: '/invite/{id}?user={userId}',
+        parameters: {
+            path: {
+                id: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'Id of room to invite',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            },
+            query: {
+                userId: {
+                    name: 'userId',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'Id of user to invite',
+                    required: true,
+                    allowEmptyValue: false
                 }
             }
-            const room = await this._roomService.createRoom(new Types.ObjectId('5f622978649dbb59d2632e04'), body.roomName, body.isPublic, body.userToAdd);
-            return this._success<{ room: DocumentRoom }>(res, 200, {
-                room
-            });
-        } catch (error) {
-            return this._fail(res, error);
-        }
-    }
-
-    @httpPut('/invite/:id')
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room'
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated | Not room creator',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found | User not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot invite user',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpPut('/invite/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async inviteUser(
         @queryParam('userId') userId: string,
         @requestParam('id') id: string,
@@ -219,8 +454,8 @@ export class RoomController extends ControllerBase {
             if (!room) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
-            if (room.creator !== null && room.creator === new Types.ObjectId('5f622978649dbb59d2632e04')) {
-                return this._fail(res, new HttpError(METHOD_NOT_ALLOWED, 'You have no rights to do so'));
+            if (room.creator !== null && room.creator === principal.details._id) {
+                return this._fail(res, new HttpError(FORBIDDEN, 'Not room creator'));
             }
             room = await this._roomService.subscribeToChatRoom(room.id, user._id);
             return this._success<{ room: DocumentRoom }>(res, 200, {
@@ -231,7 +466,58 @@ export class RoomController extends ControllerBase {
         }
     }
 
-    @httpPut('/subscribe/:id')
+    @ApiOperationPut({
+        description: 'Subscribe to the chat room',
+        summary: 'Room subscribe',
+        path: '/subscribe/{id}',
+        parameters: {
+            path: {
+                id: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'Id of the room to subscribe',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            }
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room'
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated | You have no rights',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot subscribe',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpPut('/subscribe/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async sunscribeToRoom(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -247,9 +533,9 @@ export class RoomController extends ControllerBase {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
             if (room.creator !== null) {
-                return this._fail(res, new HttpError(METHOD_NOT_ALLOWED, 'You have no rights to do so'));
+                return this._fail(res, new HttpError(FORBIDDEN, 'You have no rights'));
             }
-            room = await this._roomService.subscribeToChatRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
+            room = await this._roomService.subscribeToChatRoom(room.id, principal.details._id);
             return this._success<{ room: DocumentRoom }>(res, 200, {
                 room
             });
@@ -258,7 +544,58 @@ export class RoomController extends ControllerBase {
         }
     }
 
-    @httpPut('/unsubscribe/:id')
+    @ApiOperationPut({
+        description: 'Unsubscribe from the chat room',
+        summary: 'Room unsubscribe',
+        path: '/unsubscribe/{id}',
+        parameters: {
+            path: {
+                id: {
+                    name: 'id',
+                    type: SwaggerDefinitionConstant.Parameter.Type.STRING,
+                    description: 'Id of the room to unsubscribe',
+                    required: true,
+                    allowEmptyValue: false
+                }
+            }
+        },
+        responses: {
+            200: {
+                description: 'Success',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'Room'
+            },
+            400: {
+                description: 'Parameters fail',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            401: {
+                description: 'Unauthorized',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            403: {
+                description: 'Account not activated',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            404: {
+                description: 'Room not found',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+            500: {
+                description: 'Cannot unsubscribe',
+                type: SwaggerDefinitionConstant.Response.Type.OBJECT,
+                model: 'HttpError',
+            },
+        },
+        security: {
+            apiKeyHeader: [],
+        },
+    })
+    @httpPut('/unsubscribe/:id', AuthMiddleware, ActivatedUserMiddleware)
     public async unsubscribeFromRoom(
         @requestParam('id') id: string,
         @request() req: Request,
@@ -273,7 +610,7 @@ export class RoomController extends ControllerBase {
             if (!room) {
                 return this._fail(res, new HttpError(NOT_FOUND, 'Room not found'));
             }
-            room = await this._roomService.unsubscribeFromRoom(room.id, new Types.ObjectId('5f6f10909747881d2e27cdd8'));
+            room = await this._roomService.unsubscribeFromRoom(room.id, principal.details._id);
             return this._success<{ room: DocumentRoom }>(res, 200, {
                 room
             });

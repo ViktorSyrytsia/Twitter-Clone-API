@@ -52,7 +52,7 @@ export class MessageService {
         try {
             return this._messageRepository.findAllInRoom(roomId, limit);
         } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message)
+            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
     }
 
