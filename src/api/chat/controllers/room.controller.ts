@@ -16,7 +16,7 @@ import { RoomService } from '../services/room.service';
 
 
 @ApiPath({
-    path: '/api/v1/rooms/',
+    path: '/api/v1/rooms',
     name: 'Rooms',
     security: { apiKeyHeader: [] },
 })

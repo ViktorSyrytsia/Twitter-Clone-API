@@ -15,8 +15,8 @@ import { RoomService } from '../services/room.service';
 
 
 @ApiPath({
-    path: '/api/v1/rooms/',
-    name: 'Rooms',
+    path: '/api/v1/messages',
+    name: 'Messages',
     security: { apiKeyHeader: [] },
 })
 @controller('/messages')
@@ -46,17 +46,17 @@ export class MessageController extends ControllerBase {
             200: {
                 description: 'Success /  returns dto with messages',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Room',
+                model: 'Message',
             },
             401: {
                 description: 'Fail / unauthorized',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Room',
+                model: 'HttpError',
             },
             404: {
                 description: 'Fail / rooms not found',
                 type: SwaggerDefinitionConstant.Response.Type.ARRAY,
-                model: 'Room',
+                model: 'HttpError',
             },
         },
         security: {
