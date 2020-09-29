@@ -14,7 +14,7 @@ export class WebSocketService {
 
     public async userConnect(socketServer: SocketIO.Server, socket: SocketIO.Socket, user: DocumentUser) {
         try {
-            const rooms: DocumentRoom[] = await this._roomService.findRoomsBySubscriber(user._id);
+            const rooms: DocumentRoom[] = await this._roomService.findAllRooms(user._id);
             for (const room of rooms) {
                 socket.join(room.id.toString());
             }
@@ -75,7 +75,7 @@ export class WebSocketService {
 
     public async userDisconnect(socketServer: SocketIO.Server, socket: SocketIO.Socket, user: DocumentUser): Promise<void> {
         try {
-            const rooms: DocumentRoom[] = await this._roomService.findRoomsBySubscriber(user._id);
+            const rooms: DocumentRoom[] = await this._roomService.findAllRooms(user._id);
             for (const room of rooms) {
                 socket.leave(room.id.toString());
             }

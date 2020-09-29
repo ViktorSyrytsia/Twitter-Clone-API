@@ -22,7 +22,7 @@ export class RoomRepository extends RepositoryBase<Room> {
         return await this._repository.findByIdAndDelete(roomId).lean();
     }
 
-    public async findAll(skip: number, limit: number): Promise<DocumentRoom[]> {
+    public async findAll(skip?: number, limit?: number): Promise<DocumentRoom[]> {
         const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find().sort({ createdAt: -1 });
         return await this._addLazyLoadAndModify(findRoomsQuery, skip, limit);
     }
@@ -40,8 +40,10 @@ export class RoomRepository extends RepositoryBase<Room> {
         }).lean();
     }
 
-    public async findRoomsBySubscriber(userId: Types.ObjectId): Promise<DocumentRoom[]> {
-        return await this._repository.find({ subscribers: [userId] }).lean();
+    public async findRoomsBySubscriber(userId: Types.ObjectId, skip?: number, limit?: number): Promise<DocumentRoom[]> {
+        const findRoomsQuery: DocumentQuery<DocumentRoom[], DocumentRoom> = this._repository.find({ subscribers: [userId] }).sort({ createdAt: -1 });
+        return await this._addLazyLoadAndModify(findRoomsQuery, skip, limit);
+
     }
 
     public async enterToRoom(roomId: Types.ObjectId, userId: Types.ObjectId): Promise<DocumentRoom> {

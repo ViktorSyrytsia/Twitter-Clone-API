@@ -29,25 +29,33 @@ export class RoomController extends ControllerBase {
         super();
     }
     @ApiOperationGet({
-        description: 'Find all chat rooms, using lazy load',
+        description: 'Find all chat rooms or only subscribed, using lazy load',
         summary: 'Get rooms array',
         parameters: {
             query: {
                 skip: {
                     type: 'number',
-                    required: true,
-                    allowEmptyValue: false,
+                    required: false,
+                    allowEmptyValue: true,
                     name: 'skip',
                     description:
                         'Skip parametr of laze load (how many items need to skip)',
                 },
                 limit: {
                     type: 'number',
-                    required: true,
-                    allowEmptyValue: false,
+                    required: false,
+                    allowEmptyValue: true,
                     name: 'limit',
                     description:
                         'Limit parametr of laze load  (how many items need to show in response)',
+                },
+                subscribed: {
+                    type: 'boolean',
+                    required: true,
+                    allowEmptyValue: false,
+                    name: 'subscribed',
+                    description:
+                        'If subscribed=true, than finds only subscribed rooms, if subscribed=false, finds all rooms',
                 },
             },
         },
@@ -64,18 +72,30 @@ export class RoomController extends ControllerBase {
             }
         },
     })
-    @httpGet('/')
+    @httpGet('/', AuthMiddleware)
     public async findAllRooms(
+        @queryParam('subscribed') subscribed: boolean,
         @queryParam('skip') skip: string,
         @queryParam('limit') limit: string,
         @request() req: Request,
-        @response() res: Response
+        @response() res: Response,
+        @principal() principal: Principal
     ): Promise<Response> {
         try {
-            const rooms: DocumentRoom[] = await this._roomService.findAllRooms(
-                Number.parseInt(skip),
-                Number.parseInt(limit),
-            );
+            let rooms: DocumentRoom[];
+            if (subscribed) {
+                rooms = await this._roomService.findAllRooms(
+                    principal.details._id,
+                    Number.parseInt(skip),
+                    Number.parseInt(limit),
+                );
+            } else {
+                rooms = await this._roomService.findAllRooms(
+                    null,
+                    Number.parseInt(skip),
+                    Number.parseInt(limit),
+                );
+            }
             return this._success<{ rooms: DocumentRoom[] }>(res, 200, {
                 rooms,
             });

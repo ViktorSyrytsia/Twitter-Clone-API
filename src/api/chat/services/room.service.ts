@@ -52,17 +52,13 @@ export class RoomService {
         }
     }
 
-    public async findAllRooms(skip: number, limit: number): Promise<DocumentRoom[]> {
+    public async findAllRooms(userId?: Types.ObjectId, skip?: number, limit?: number): Promise<DocumentRoom[]> {
         try {
-            return this._roomRepository.findAll(skip, limit);
-        } catch (error) {
-            throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
-        }
-    }
-
-    public async findRoomsBySubscriber(userId: Types.ObjectId): Promise<DocumentRoom[]> {
-        try {
-            return this._roomRepository.findRoomsBySubscriber(userId);
+            if (userId) {
+                return this._roomRepository.findRoomsBySubscriber(userId, skip, limit);
+            } else {
+                return this._roomRepository.findAll(skip, limit);
+            }
         } catch (error) {
             throw new HttpError(INTERNAL_SERVER_ERROR, error.message);
         }
